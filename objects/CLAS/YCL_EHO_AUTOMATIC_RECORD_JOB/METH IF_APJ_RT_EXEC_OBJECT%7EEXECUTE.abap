@@ -28,19 +28,25 @@
     ENDLOOP.
     get_items(  ).
     IF mt_automatic_items IS INITIAL.
-      DATA(lo_message) = cl_bali_message_setter=>create( severity = if_bali_constants=>c_severity_information
-                                                         id = ycl_eho_utils=>mc_message_class
-                                                         number = 022 ) .
-      mo_log->add_item( lo_message ).
+      TRY.
+          DATA(lo_message) = cl_bali_message_setter=>create( severity = if_bali_constants=>c_severity_information
+                                                             id = ycl_eho_utils=>mc_message_class
+                                                             number = 022 ) .
+          mo_log->add_item( lo_message ).
+        CATCH cx_bali_runtime.
+      ENDTRY.
     ELSE.
       get_rule( CHANGING ct_items = mt_automatic_items ).
     ENDIF.
     DELETE mt_automatic_items WHERE rule_no IS INITIAL.
     IF mt_automatic_items IS INITIAL.
-      lo_message = cl_bali_message_setter=>create( severity = if_bali_constants=>c_severity_information
-                                                         id = ycl_eho_utils=>mc_message_class
-                                                         number = 024 ) .
-      mo_log->add_item( lo_message ).
+      TRY.
+          lo_message = cl_bali_message_setter=>create( severity = if_bali_constants=>c_severity_information
+                                                             id = ycl_eho_utils=>mc_message_class
+                                                             number = 024 ) .
+          mo_log->add_item( lo_message ).
+        CATCH cx_bali_runtime.
+      ENDTRY.
     ELSE.
       create_journal_entry(  ).
     ENDIF.

@@ -194,7 +194,7 @@
                                                         journalentryitemamount = -1 * <ls_item>-amount
                                                         currency = <ls_item>-currency  ) ) ) TO lt_aritem.
             IF <ls_item>-rule_data-exchange_rate_type IS NOT INITIAL.
-              LOOP AT lt_apitem assIGNING fIELD-SYMBOL(<ls_aritem>).
+              LOOP AT lt_apitem ASSIGNING FIELD-SYMBOL(<ls_aritem>).
                 APPEND VALUE #( currencyrole = ls_companycode_parameters-currency_type_usd
                                 journalentryitemamount = lv_usd * -1
                                 currency = 'USD' ) TO <ls_aritem>-_currencyamount.
