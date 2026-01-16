@@ -7,9 +7,9 @@
     "DDLXNAME":"YEHO_DDL_C_COMPANY",
     "VERSION":"A",
     "CHANGED_BY":"SAP_CUSTOMER",
-    "CHANGED_ON":"2026-01-12",
-    "CHANGED_AT":"09:39:43",
-    "UUID":"FA163EBBCF7E1FE0BBF353E93562C775",
+    "CHANGED_ON":"2026-01-16",
+    "CHANGED_AT":"14:33:57",
+    "UUID":"FA163EBBCF7E1FE0BCDD0C83CE344785",
     "ABAP_LANGUAGE_VERSION":"5"
    }
   ]
@@ -34,7 +34,7 @@
     "DDLXNAME":"YEHO_DDL_C_COMPANY",
     "VERSION":"A",
     "UUID":"",
-    "SOURCE":"@Metadata.layer: #CORE\r\nannotate entity YEHO_DDL_C_COMPANY with\r\n{\r\n\r\n  @UI.facet: [ { id:            'Company',\r\n                 purpose:       #STANDARD,\r\n                 type:          #IDENTIFICATION_REFERENCE,\r\n                 label:         'Şirket Parametreleri',\r\n                 position:      10 }  ]\r\n\r\n  @UI : { lineItem: [{  position: 10 }] , identification: [{  position: 10 }] }\r\n  @Search.defaultSearchElement: true\r\n  @Consumption.valueHelpDefinition: [ { entity: { name: 'YVH_EHO_COMPANYCODE', element: 'CompanyCode' }}]\r\n  Companycode;\r\n  @UI : { lineItem: [{  position: 20 }] , identification: [{  position: 20 }] }\r\n  TaxNumber;\r\n  @UI : { lineItem: [{  position: 30 }] , identification: [{  position: 30 }] }\r\n  ArbitrageAccount;\r\n  @UI : { lineItem: [{  position: 40 }] , identification: [{  position: 40 }] }\r\n  StartDate;\r\n  @UI : { lineItem: [{  position: 50 }] , identification: [{  position: 50 }] }\r\n  CurrencyField;\r\n  @UI : { lineItem: [{  position: 60 }] , identification: [{  position: 60 }] }\r\n  Email;\r\n  @UI : { lineItem: [{  position: 70 }] , identification: [{  position: 70 }] }\r\n  CurrencyTypeUsd;\r\n  @UI : { lineItem: [{  position: 80 }] , identification: [{  position: 80 }] }\r\n  CurrencyTypeEur;    \r\n\r\n}"
+    "SOURCE":"@Metadata.layer: #CORE\r\nannotate entity YEHO_DDL_C_COMPANY with\r\n{\r\n\r\n  @UI.facet: [ { id:            'Company',\r\n                 purpose:       #STANDARD,\r\n                 type:          #IDENTIFICATION_REFERENCE,\r\n                 label:         'Şirket Parametreleri',\r\n                 position:      10 }  ]\r\n\r\n  @UI : { lineItem: [{  position: 10 }] , identification: [{  position: 10 }] }\r\n  @Search.defaultSearchElement: true\r\n  @Consumption.valueHelpDefinition: [ { entity: { name: 'YVH_EHO_COMPANYCODE', element: 'CompanyCode' }}]\r\n  Companycode;\r\n  @UI : { lineItem: [{  position: 20 }] , identification: [{  position: 20 }] }\r\n  TaxNumber;\r\n  @UI : { lineItem: [{  position: 30 }] , identification: [{  position: 30 }] }\r\n  ArbitrageAccount;\r\n  @UI : { lineItem: [{  position: 40 }] , identification: [{  position: 40 }] }\r\n  StartDate;\r\n  @UI : { lineItem: [{  position: 50 }] , identification: [{  position: 50 }] }\r\n  CurrencyField;\r\n  @UI : { lineItem: [{  position: 60 }] , identification: [{  position: 60 }] }\r\n  Email;\r\n  @UI : { lineItem: [{  position: 70 }] , identification: [{  position: 70 }] }\r\n  CurrencyTypeUsd;\r\n  @UI : { lineItem: [{  position: 80 }] , identification: [{  position: 80 }] }\r\n  CurrencyTypeEur;    \r\n  @UI : { lineItem: [{  position: 90 }] , identification: [{  position: 90 }] }\r\n  AutomaticItemText;     \r\n\r\n}"
    }
   ]
  },
@@ -55,6 +55,20 @@
     "NAME":"UI.LINEITEM$1$.POSITION",
     "ELEMENT_TYPE":"S",
     "VALUE":"30"
+   },
+   {
+    "DDLXNAME":"YEHO_DDL_C_COMPANY",
+    "ELEMENT":"AUTOMATICITEMTEXT",
+    "NAME":"UI.IDENTIFICATION$1$.POSITION",
+    "ELEMENT_TYPE":"S",
+    "VALUE":"90"
+   },
+   {
+    "DDLXNAME":"YEHO_DDL_C_COMPANY",
+    "ELEMENT":"AUTOMATICITEMTEXT",
+    "NAME":"UI.LINEITEM$1$.POSITION",
+    "ELEMENT_TYPE":"S",
+    "VALUE":"90"
    },
    {
     "DDLXNAME":"YEHO_DDL_C_COMPANY",
@@ -241,8 +255,8 @@
     "EXTENDED_ARTIFACT":"YEHO_DDL_C_COMPANY",
     "VARIANT":"",
     "LAYER":1500,
-    "DT_UUID":"FA163EBBCF7E1FE0BBF353E93562C775",
-    "RT_HASH":"DAB154C5952C724FDA21CA417B0D11C676F347E8",
+    "DT_UUID":"FA163EBBCF7E1FE0BCDD0C83CE344785",
+    "RT_HASH":"9B391F6F2B4335C9CADCA02386F11370934899D9",
     "GEN_VERSION":"0",
     "TYPE":"0"
    }

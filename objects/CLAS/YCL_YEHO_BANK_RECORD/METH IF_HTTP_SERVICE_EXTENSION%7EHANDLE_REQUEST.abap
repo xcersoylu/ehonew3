@@ -46,7 +46,7 @@
            bseg~debitcreditcode,
            bkpf~transactioncode,
            bkpf~accountingdoccreatedbyuser,
-           ' ' as delete
+           ' ' AS delete
        FROM yeho_t_savedrcpt AS savedrcpt INNER JOIN i_journalentry AS bkpf ON bkpf~companycode = savedrcpt~companycode
                                                                          AND bkpf~accountingdocument = savedrcpt~accountingdocument
                                                                          AND bkpf~fiscalyear = savedrcpt~fiscal_year
@@ -120,6 +120,8 @@
         CLEAR : ls_bankdata_min , ls_bankdata_max.
       ENDLOOP.
 
+      SELECT SINGLE * FROM yeho_t_company WHERE companycode = @ms_request-companycode INTO @DATA(ls_company_parameter).
+
       CASE ms_request-record_type.
         WHEN '1'. "muhasebeleşmemiş
           SELECT *
@@ -144,6 +146,10 @@
              INTO TABLE @DATA(lt_mandoc_db).
 
             LOOP AT ms_response-items ASSIGNING FIELD-SYMBOL(<ls_item>).
+              IF ls_company_parameter-automatic_item_text IS NOT INITIAL.
+                <ls_item>-documentitemtext102 = <ls_item>-description.
+                <ls_item>-documentitemtext = <ls_item>-description.
+              ENDIF.
               READ TABLE lt_manual_documents INTO DATA(ls_manual_document)
                                              WITH KEY glaccount = <ls_item>-glaccount
                                                       postingdate = <ls_item>-physical_operation_date
@@ -164,12 +170,12 @@
               ENDIF.
 *virman olabilir mi ?
               IF <ls_item>-manualrecord IS INITIAL.
-                READ TABLE lt_virman asSIGNING fIELD-SYMBOL(<ls_virman>)
+                READ TABLE lt_virman ASSIGNING FIELD-SYMBOL(<ls_virman>)
                                                WITH KEY glaccount = <ls_item>-glaccount
                                                         postingdate = <ls_item>-physical_operation_date
                                                         absoluteamountintransaccrcy = abs( <ls_item>-amount ).
                 IF sy-subrc = 0.
-                  <ls_virman>-delete = abap_True.
+                  <ls_virman>-delete = abap_true.
                   <ls_item>-manualrecord = abap_true.
                 ENDIF.
                 DELETE lt_virman WHERE delete = abap_true.
@@ -199,6 +205,10 @@
              INTO TABLE @lt_mandoc_db.
           ENDIF.
           LOOP AT ms_response-items ASSIGNING <ls_item> WHERE accountingdocument IS INITIAL.
+              IF ls_company_parameter-automatic_item_text IS NOT INITIAL.
+                <ls_item>-documentitemtext102 = <ls_item>-description.
+                <ls_item>-documentitemtext = <ls_item>-description.
+              ENDIF.
             READ TABLE lt_manual_documents INTO ls_manual_document
                                            WITH KEY glaccount = <ls_item>-glaccount
                                                     postingdate = <ls_item>-physical_operation_date
@@ -223,7 +233,7 @@
             ENDIF.
 *virman olabilir mi ?
             IF <ls_item>-manualrecord IS INITIAL.
-              READ TABLE lt_virman asSIGNING <ls_virman>
+              READ TABLE lt_virman ASSIGNING <ls_virman>
                                              WITH KEY glaccount = <ls_item>-glaccount
                                                       postingdate = <ls_item>-physical_operation_date
                                                       absoluteamountintransaccrcy = abs( <ls_item>-amount ).
@@ -234,7 +244,7 @@
                 <ls_item>-accountingdocument = <ls_virman>-accountingdocument.
                 <ls_item>-fiscal_year = <ls_virman>-fiscalyear.
               ENDIF.
-              delete lt_virman wHERE delete = abap_true.
+              DELETE lt_virman WHERE delete = abap_true.
             ENDIF.
           ENDLOOP.
           DELETE ms_response-items WHERE accountingdocument IS INITIAL AND manualrecord IS INITIAL.
@@ -261,6 +271,10 @@
           ENDIF.
 
           LOOP AT ms_response-items ASSIGNING <ls_item> WHERE accountingdocument IS INITIAL.
+              IF ls_company_parameter-automatic_item_text IS NOT INITIAL.
+                <ls_item>-documentitemtext102 = <ls_item>-description.
+                <ls_item>-documentitemtext = <ls_item>-description.
+              ENDIF.
             READ TABLE lt_manual_documents INTO ls_manual_document
                                            WITH KEY glaccount = <ls_item>-glaccount
                                                     postingdate = <ls_item>-physical_operation_date
@@ -285,18 +299,18 @@
             ENDIF.
 *virman olabilir mi ?
             IF <ls_item>-manualrecord IS INITIAL.
-              READ TABLE lt_virman asSIGNING <ls_virman>
+              READ TABLE lt_virman ASSIGNING <ls_virman>
                                              WITH KEY glaccount = <ls_item>-glaccount
                                                       postingdate = <ls_item>-physical_operation_date
                                                       absoluteamountintransaccrcy = abs( <ls_item>-amount ).
               IF sy-subrc = 0.
-                <ls_virman>-delete = abap_True.
+                <ls_virman>-delete = abap_true.
                 <ls_item>-manualrecord = abap_true.
                 <ls_item>-username = <ls_virman>-accountingdoccreatedbyuser.
                 <ls_item>-accountingdocument = <ls_virman>-accountingdocument.
                 <ls_item>-fiscal_year = <ls_virman>-fiscalyear.
               ENDIF.
-              delete lt_virman wHERE delete = abap_true.
+              DELETE lt_virman WHERE delete = abap_true.
             ENDIF.
           ENDLOOP.
       ENDCASE.

@@ -10,16 +10,17 @@ authorization master ( instance )
   create;
   update;
   delete;
-  field ( readonly :update ) Companycode;
+  field ( readonly : update ) Companycode;
   mapping for yeho_t_company
     {
-      Companycode      = companycode;
-      TaxNumber        = tax_number;
-      ArbitrageAccount = arbitrage_account;
-      StartDate        = start_date;
-      CurrencyField    = currency_field;
-      Email            = email;
-      CurrencyTypeUsd  = currency_type_usd;
-      CurrencyTypeEur  = currency_type_eur;
+      Companycode       = companycode;
+      TaxNumber         = tax_number;
+      ArbitrageAccount  = arbitrage_account;
+      StartDate         = start_date;
+      CurrencyField     = currency_field;
+      Email             = email;
+      CurrencyTypeUsd   = currency_type_usd;
+      CurrencyTypeEur   = currency_type_eur;
+      AutomaticItemText = automatic_item_text;
     }
 }
