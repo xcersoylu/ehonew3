@@ -1,0 +1,92 @@
+  METHOD create_arbitrage_doc1.
+    TYPES : BEGIN OF ty_currencyamount,
+              currencyrole           TYPE string,
+              journalentryitemamount TYPE yeho_e_wrbtr,
+              currency               TYPE waers,
+              taxamount              TYPE yeho_e_wrbtr,
+              taxbaseamount          TYPE yeho_e_wrbtr,
+            END OF ty_currencyamount.
+    TYPES tt_currencyamount TYPE TABLE OF ty_currencyamount WITH EMPTY KEY.
+    TYPES : BEGIN OF ty_glitem,
+              glaccountlineitem             TYPE string,
+              glaccount                     TYPE saknr,
+              assignmentreference           TYPE dzuonr,
+              reference1idbybusinesspartner TYPE xref1,
+              reference2idbybusinesspartner TYPE xref2,
+              reference3idbybusinesspartner TYPE xref3,
+              costcenter                    TYPE kostl,
+              profitcenter                  TYPE prctr,
+              orderid                       TYPE aufnr,
+              documentitemtext              TYPE sgtxt,
+              specialglcode                 TYPE yeho_e_umskz,
+              taxcode                       TYPE mwskz,
+              _currencyamount               TYPE tt_currencyamount,
+            END OF ty_glitem.
+    DATA lt_je             TYPE TABLE FOR ACTION IMPORT i_journalentrytp~post.
+    DATA lt_glitem         TYPE TABLE OF ty_glitem.
+    APPEND INITIAL LINE TO lt_je ASSIGNING FIELD-SYMBOL(<fs_je>).
+    TRY.
+        <fs_je>-%cid = to_upper( cl_uuid_factory=>create_system_uuid( )->create_uuid_x16( ) ).
+        APPEND VALUE #( glaccountlineitem             = |001|
+                        glaccount                     = is_item-glaccount
+                        assignmentreference           = is_item-assignmentreference
+                        reference1idbybusinesspartner = is_item-reference1idbybusinesspartner
+                        reference2idbybusinesspartner = is_item-reference2idbybusinesspartner
+                        reference3idbybusinesspartner = is_item-reference3idbybusinesspartner
+                        documentitemtext              = is_item-documentitemtext102
+                        _currencyamount = VALUE #( ( currencyrole = '00'
+                                                    journalentryitemamount = is_item-amount
+                                                    currency = is_item-currency  ) )          ) TO lt_glitem.
+
+        APPEND VALUE #( glaccountlineitem             = |002|
+                        glaccount                     = is_item-arbitrage-arbitrage_account
+                        assignmentreference           = is_item-arbitrage-arbitrage_assignmentreference
+                        reference1idbybusinesspartner = is_item-arbitrage-arbitrage_reference1
+                        reference2idbybusinesspartner = is_item-arbitrage-arbitrage_reference2
+                        reference3idbybusinesspartner = is_item-arbitrage-arbitrage_reference3
+                        documentitemtext              = is_item-arbitrage-arbitrage_item_text
+                        _currencyamount = VALUE #( ( currencyrole = '00'
+                                            journalentryitemamount = is_item-amount * -1
+                                            currency = is_item-currency  ) )          ) TO lt_glitem.
+        <fs_je>-%param = VALUE #( companycode                  = is_item-companycode
+                                  documentreferenceid          = is_item-documentreferenceid
+                                  createdbyuser                = sy-uname
+                                  businesstransactiontype      = 'RFBU'
+                                  accountingdocumenttype       = is_item-document_type
+                                  documentdate                 = is_item-physical_operation_date
+                                  postingdate                  = is_item-physical_operation_date
+                                  accountingdocumentheadertext = is_item-accountingdocumentheadertext
+*                                  taxdeterminationdate         = cl_abap_context_info=>get_system_date( )
+                                  _glitems                     = VALUE #( FOR wa_glitem  IN lt_glitem  ( CORRESPONDING #( wa_glitem  MAPPING _currencyamount = _currencyamount ) ) )
+                                ).
+        MODIFY ENTITIES OF i_journalentrytp
+         ENTITY journalentry
+         EXECUTE post FROM lt_je
+         FAILED DATA(ls_failed)
+         REPORTED DATA(ls_reported)
+         MAPPED DATA(ls_mapped).
+        IF ls_failed IS NOT INITIAL.
+          ms_response-messages = VALUE #( BASE ms_response-messages FOR wa IN ls_reported-journalentry ( message = wa-%msg->if_message~get_text( ) messagetype = mc_error ) ).
+        ELSE.
+          COMMIT ENTITIES BEGIN
+           RESPONSE OF i_journalentrytp
+           FAILED DATA(ls_commit_failed)
+           REPORTED DATA(ls_commit_reported).
+          COMMIT ENTITIES END.
+          IF ls_commit_failed IS INITIAL.
+            MESSAGE ID ycl_eho_utils=>mc_message_class
+                    TYPE ycl_eho_utils=>mc_success
+                    NUMBER 016
+                    WITH VALUE #( ls_commit_reported-journalentry[ 1 ]-accountingdocument OPTIONAL )
+                    INTO DATA(lv_message).
+            APPEND VALUE #( message = lv_message messagetype =  ycl_eho_utils=>mc_success ) TO ms_response-messages.
+            rs_fi_doc-accountingdocument = VALUE #( ls_commit_reported-journalentry[ 1 ]-accountingdocument OPTIONAL ).
+            rs_fi_doc-fiscalyear = VALUE #( ls_commit_reported-journalentry[ 1 ]-fiscalyear OPTIONAL ).
+          ELSE.
+            ms_response-messages = VALUE #( BASE ms_response-messages FOR wa_commit IN ls_commit_reported-journalentry ( message = wa_commit-%msg->if_message~get_text( ) messagetype = mc_error ) ).
+          ENDIF.
+        ENDIF.
+      CATCH cx_uuid_error INTO DATA(lx_error).
+        APPEND VALUE #( message = lx_error->get_longtext(  ) messagetype = mc_error ) TO ms_response-messages.
+    ENDTRY.
+  ENDMETHOD.

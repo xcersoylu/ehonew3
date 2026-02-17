@@ -87,6 +87,15 @@
     DATA(lv_companycode) = VALUE #( ms_request-items[ 1 ]-companycode OPTIONAL ).
     SELECT SINGLE * FROM yeho_t_company WHERE companycode = @lv_companycode INTO @DATA(ls_companycode_parameter).
     LOOP AT ms_request-items ASSIGNING FIELD-SYMBOL(<ls_item>).
+      IF <ls_item>-arbitrage IS NOT INITIAL.
+        create_arbitrage_docs(
+          EXPORTING
+            is_item           = <ls_item>
+          CHANGING
+            ct_saved_receipts = lt_saved_receipts
+        ).
+        CONTINUE.
+      ENDIF.
       APPEND INITIAL LINE TO lt_je ASSIGNING FIELD-SYMBOL(<fs_je>).
       TRY.
           <fs_je>-%cid = to_upper( cl_uuid_factory=>create_system_uuid( )->create_uuid_x16( ) ).
@@ -246,7 +255,7 @@
                                                         currency = <ls_item>-currency  ) )          ) TO lt_glitem.
 
             IF lv_add_usd = 'X' OR lv_add_eur = 'X'.
-              LOOP AT lt_glitem asSIGNING <ls_glitem> WHERE glaccountlineitem = '002'.
+              LOOP AT lt_glitem ASSIGNING <ls_glitem> WHERE glaccountlineitem = '002'.
                 IF lv_add_usd = 'X'.
                   APPEND VALUE #( currencyrole = ls_companycode_parameter-currency_type_usd
                                   journalentryitemamount = lv_usd * -1

@@ -79,6 +79,14 @@
     DATA(lv_companycode) = VALUE #( mt_automatic_items[ 1 ]-companycode OPTIONAL ).
     SELECT SINGLE * FROM yeho_t_company WHERE companycode = @lv_companycode INTO @DATA(ls_companycode_parameters).
     LOOP AT mt_automatic_items ASSIGNING FIELD-SYMBOL(<ls_item>).
+      IF ls_companycode_parameters-automatic_item_text IS NOT INITIAL.
+        IF <ls_item>-rule_data-documentitemtext_1 IS INITIAL.
+          <ls_item>-rule_data-documentitemtext_1 = <ls_item>-description.
+        ENDIF.
+        IF <ls_item>-rule_data-documentitemtext_2 IS INITIAL.
+          <ls_item>-rule_data-documentitemtext_2 = <ls_item>-description.
+        ENDIF.
+      ENDIF.
       APPEND INITIAL LINE TO lt_je ASSIGNING FIELD-SYMBOL(<fs_je>).
       TRY.
           <fs_je>-%cid = to_upper( cl_uuid_factory=>create_system_uuid( )->create_uuid_x16( ) ).

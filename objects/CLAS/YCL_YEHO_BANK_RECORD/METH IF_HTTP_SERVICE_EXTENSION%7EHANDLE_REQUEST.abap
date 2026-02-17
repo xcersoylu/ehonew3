@@ -184,7 +184,7 @@
             DELETE ms_response-items WHERE manualrecord = abap_true.
           ENDIF.
         WHEN '2'. "muhasebeleşmiş
-          SELECT offlinedata~* , saved~accountingdocument,saved~fiscal_year
+          SELECT offlinedata~* , saved~accountingdocument,saved~fiscal_year , saved~arbitrage_document , saved~arbitrage_fiscal_year
             FROM yeho_t_offlinedt AS offlinedata LEFT OUTER JOIN yeho_t_savedrcpt AS saved ON saved~companycode = offlinedata~companycode
                                                                                      AND saved~glaccount = offlinedata~glaccount
                                                                                      AND saved~receipt_no = offlinedata~receipt_no
@@ -205,10 +205,10 @@
              INTO TABLE @lt_mandoc_db.
           ENDIF.
           LOOP AT ms_response-items ASSIGNING <ls_item> WHERE accountingdocument IS INITIAL.
-              IF ls_company_parameter-automatic_item_text IS NOT INITIAL.
-                <ls_item>-documentitemtext102 = <ls_item>-description.
-                <ls_item>-documentitemtext = <ls_item>-description.
-              ENDIF.
+            IF ls_company_parameter-automatic_item_text IS NOT INITIAL.
+              <ls_item>-documentitemtext102 = <ls_item>-description.
+              <ls_item>-documentitemtext = <ls_item>-description.
+            ENDIF.
             READ TABLE lt_manual_documents INTO ls_manual_document
                                            WITH KEY glaccount = <ls_item>-glaccount
                                                     postingdate = <ls_item>-physical_operation_date
@@ -249,7 +249,7 @@
           ENDLOOP.
           DELETE ms_response-items WHERE accountingdocument IS INITIAL AND manualrecord IS INITIAL.
         WHEN '3'. "tümü
-          SELECT offlinedata~* , saved~accountingdocument,saved~fiscal_year
+          SELECT offlinedata~* , saved~accountingdocument,saved~fiscal_year, saved~arbitrage_document , saved~arbitrage_fiscal_year
             FROM yeho_t_offlinedt AS offlinedata LEFT OUTER JOIN yeho_t_savedrcpt AS saved ON saved~companycode = offlinedata~companycode
                                                                                      AND saved~glaccount = offlinedata~glaccount
                                                                                      AND saved~receipt_no = offlinedata~receipt_no
@@ -271,10 +271,10 @@
           ENDIF.
 
           LOOP AT ms_response-items ASSIGNING <ls_item> WHERE accountingdocument IS INITIAL.
-              IF ls_company_parameter-automatic_item_text IS NOT INITIAL.
-                <ls_item>-documentitemtext102 = <ls_item>-description.
-                <ls_item>-documentitemtext = <ls_item>-description.
-              ENDIF.
+            IF ls_company_parameter-automatic_item_text IS NOT INITIAL.
+              <ls_item>-documentitemtext102 = <ls_item>-description.
+              <ls_item>-documentitemtext = <ls_item>-description.
+            ENDIF.
             READ TABLE lt_manual_documents INTO ls_manual_document
                                            WITH KEY glaccount = <ls_item>-glaccount
                                                     postingdate = <ls_item>-physical_operation_date

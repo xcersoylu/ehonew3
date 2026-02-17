@@ -296,6 +296,41 @@
     "TYPE":"C",
     "LENGTH":20,
     "DECIMALS":-1
+   },
+   {
+    "NAME":"OB_OAUTH2_FLAG",
+    "KEY":"",
+    "TYPE":"C",
+    "LENGTH":1,
+    "DECIMALS":-1
+   },
+   {
+    "NAME":"OB_OAUTH2_BASIC_AUTH",
+    "KEY":"",
+    "TYPE":"C",
+    "LENGTH":1,
+    "DECIMALS":-1
+   },
+   {
+    "NAME":"OB_OAUTH2_JWT_AUTH",
+    "KEY":"",
+    "TYPE":"C",
+    "LENGTH":1,
+    "DECIMALS":-1
+   },
+   {
+    "NAME":"OB_OAUTH2_FORM_AUTH",
+    "KEY":"",
+    "TYPE":"C",
+    "LENGTH":1,
+    "DECIMALS":-1
+   },
+   {
+    "NAME":"OB_OIDC_BEARER_AUTH",
+    "KEY":"",
+    "TYPE":"C",
+    "LENGTH":1,
+    "DECIMALS":-1
    }
   ],
   "properties":
