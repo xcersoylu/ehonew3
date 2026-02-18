@@ -85,7 +85,7 @@
 
     /ui2/cl_json=>deserialize( EXPORTING json = lv_request_body CHANGING data = ms_request ).
     DATA(lv_companycode) = VALUE #( ms_request-items[ 1 ]-companycode OPTIONAL ).
-    SELECT SINGLE * FROM yeho_t_company WHERE companycode = @lv_companycode INTO @DATA(ls_companycode_parameter).
+    SELECT SINGLE * FROM yeho_t_company WHERE companycode = @lv_companycode INTO @ms_companycode_parameter.
     LOOP AT ms_request-items ASSIGNING FIELD-SYMBOL(<ls_item>).
       IF <ls_item>-arbitrage IS NOT INITIAL.
         create_arbitrage_docs(
@@ -152,12 +152,12 @@
           IF lv_add_usd = 'X' OR lv_add_eur = 'X'.
             LOOP AT lt_glitem ASSIGNING FIELD-SYMBOL(<ls_glitem>).
               IF lv_add_usd = 'X'.
-                APPEND VALUE #( currencyrole = ls_companycode_parameter-currency_type_usd
+                APPEND VALUE #( currencyrole = ms_companycode_parameter-currency_type_usd
                                 journalentryitemamount = lv_usd
                                 currency = 'USD' ) TO <ls_glitem>-_currencyamount.
               ENDIF.
               IF lv_add_eur = 'X'.
-                APPEND VALUE #( currencyrole = ls_companycode_parameter-currency_type_eur
+                APPEND VALUE #( currencyrole = ms_companycode_parameter-currency_type_eur
                                 journalentryitemamount = lv_eur
                                 currency = 'EUR' ) TO <ls_glitem>-_currencyamount.
               ENDIF.
@@ -184,12 +184,12 @@
             IF lv_add_usd = 'X' OR lv_add_eur = 'X'.
               LOOP AT lt_apitem ASSIGNING FIELD-SYMBOL(<ls_apitem>).
                 IF lv_add_usd = 'X'.
-                  APPEND VALUE #( currencyrole = ls_companycode_parameter-currency_type_usd
+                  APPEND VALUE #( currencyrole = ms_companycode_parameter-currency_type_usd
                                   journalentryitemamount = lv_usd * -1
                                   currency = 'USD' ) TO <ls_apitem>-_currencyamount.
                 ENDIF.
                 IF lv_add_eur = 'X'.
-                  APPEND VALUE #( currencyrole = ls_companycode_parameter-currency_type_eur
+                  APPEND VALUE #( currencyrole = ms_companycode_parameter-currency_type_eur
                                   journalentryitemamount = lv_eur * -1
                                   currency = 'EUR' ) TO <ls_apitem>-_currencyamount.
                 ENDIF.
@@ -216,12 +216,12 @@
             IF lv_add_usd = 'X' OR lv_add_eur = 'X'.
               LOOP AT lt_aritem ASSIGNING FIELD-SYMBOL(<ls_aritem>).
                 IF lv_add_usd = 'X'.
-                  APPEND VALUE #( currencyrole = ls_companycode_parameter-currency_type_usd
+                  APPEND VALUE #( currencyrole = ms_companycode_parameter-currency_type_usd
                                   journalentryitemamount = lv_usd * -1
                                   currency = 'USD' ) TO <ls_aritem>-_currencyamount.
                 ENDIF.
                 IF lv_add_eur = 'X'.
-                  APPEND VALUE #( currencyrole = ls_companycode_parameter-currency_type_eur
+                  APPEND VALUE #( currencyrole = ms_companycode_parameter-currency_type_eur
                                   journalentryitemamount = lv_eur * -1
                                   currency = 'EUR' ) TO <ls_aritem>-_currencyamount.
                 ENDIF.
@@ -257,12 +257,12 @@
             IF lv_add_usd = 'X' OR lv_add_eur = 'X'.
               LOOP AT lt_glitem ASSIGNING <ls_glitem> WHERE glaccountlineitem = '002'.
                 IF lv_add_usd = 'X'.
-                  APPEND VALUE #( currencyrole = ls_companycode_parameter-currency_type_usd
+                  APPEND VALUE #( currencyrole = ms_companycode_parameter-currency_type_usd
                                   journalentryitemamount = lv_usd * -1
                                   currency = 'USD' ) TO <ls_glitem>-_currencyamount.
                 ENDIF.
                 IF lv_add_eur = 'X'.
-                  APPEND VALUE #( currencyrole = ls_companycode_parameter-currency_type_eur
+                  APPEND VALUE #( currencyrole = ms_companycode_parameter-currency_type_eur
                                   journalentryitemamount = lv_eur * -1
                                   currency = 'EUR' ) TO <ls_glitem>-_currencyamount.
                 ENDIF.
@@ -330,8 +330,9 @@
       ENDTRY.
     ENDLOOP.
     IF lt_saved_receipts[] IS NOT INITIAL.
-      INSERT yeho_t_savedrcpt FROM TABLE @lt_saved_receipts.
-      COMMIT WORK AND WAIT.
+      MODIFY yeho_t_savedrcpt FROM TABLE @lt_saved_receipts.
+*      INSERT yeho_t_savedrcpt FROM TABLE @lt_saved_receipts.
+*      COMMIT WORK AND WAIT.
     ENDIF.
     DATA(lv_response_body) = /ui2/cl_json=>serialize( EXPORTING data = ms_response ).
     response->set_text( lv_response_body ).

@@ -82,7 +82,13 @@
                         documentitemtext              = is_item-arbitrage-arbitrage_item_text
                         _currencyamount = VALUE #( ( currencyrole = '00'
                                                     journalentryitemamount = is_item-arbitrage-arbitrage_amount
-                                                    currency = is_item-arbitrage-arbitrage_currency  ) )          ) TO lt_glitem.
+                                                    currency = is_item-arbitrage-arbitrage_currency  )
+                                                    ( currencyrole = COND #( WHEN is_item-currency = 'USD' THEN ms_companycode_parameter-currency_type_usd
+                                                                             WHEN is_item-currency = 'EUR' THEN ms_companycode_parameter-currency_type_eur
+                                                                             ELSE '10' )
+                                                      journalentryitemamount = is_item-amount
+                                                      currency = is_item-currency  ) ) "ilk belgenin para birimine göre olan ekleniyor.
+                                         ) TO lt_glitem.
 
         IF is_item-supplier IS NOT INITIAL.
           APPEND VALUE #( glaccountlineitem             = |002|
@@ -100,7 +106,13 @@
                           specialglcode                 = is_item-specialglcode
                         _currencyamount = VALUE #( ( currencyrole = '00'
                                                     journalentryitemamount = is_item-arbitrage-arbitrage_amount * -1
-                                                    currency = is_item-arbitrage-arbitrage_currency  ) )  ) TO lt_apitem.
+                                                    currency = is_item-arbitrage-arbitrage_currency  )
+                                                    ( currencyrole = COND #( WHEN is_item-currency = 'USD' THEN ms_companycode_parameter-currency_type_usd
+                                                                             WHEN is_item-currency = 'EUR' THEN ms_companycode_parameter-currency_type_eur
+                                                                             ELSE '10' )
+                                                      journalentryitemamount = is_item-amount * -1
+                                                      currency = is_item-currency  ) ) "ilk belgenin para birimine göre olan ekleniyor.
+                                                    ) TO lt_apitem.
         ELSEIF is_item-customer IS NOT INITIAL.
           APPEND VALUE #( glaccountlineitem              = |002|
                           customer                       = is_item-customer
@@ -117,7 +129,13 @@
                            specialglcode                 = is_item-specialglcode
                         _currencyamount = VALUE #( ( currencyrole = '00'
                                                     journalentryitemamount = is_item-arbitrage-arbitrage_amount * -1
-                                                    currency = is_item-arbitrage-arbitrage_currency  ) )  ) TO lt_aritem.
+                                                    currency = is_item-arbitrage-arbitrage_currency  )
+                                                    ( currencyrole = COND #( WHEN is_item-currency = 'USD' THEN ms_companycode_parameter-currency_type_usd
+                                                                             WHEN is_item-currency = 'EUR' THEN ms_companycode_parameter-currency_type_eur
+                                                                             ELSE '10' )
+                                                      journalentryitemamount = is_item-amount * -1
+                                                      currency = is_item-currency  ) ) "ilk belgenin para birimine göre olan ekleniyor.
+                                                    ) TO lt_aritem.
         ELSEIF is_item-operationalglaccount IS NOT INITIAL.
           APPEND VALUE #( glaccountlineitem             = |002|
                           glaccount                     = is_item-operationalglaccount
@@ -133,7 +151,13 @@
                           taxcode                       = is_item-taxcode
                         _currencyamount = VALUE #( ( currencyrole = '00'
                                                     journalentryitemamount = is_item-arbitrage-arbitrage_amount * -1
-                                                    currency = is_item-arbitrage-arbitrage_currency  ) )          ) TO lt_glitem.
+                                                    currency = is_item-arbitrage-arbitrage_currency  )
+                                                    ( currencyrole = COND #( WHEN is_item-currency = 'USD' THEN ms_companycode_parameter-currency_type_usd
+                                                                             WHEN is_item-currency = 'EUR' THEN ms_companycode_parameter-currency_type_eur
+                                                                             ELSE '10' )
+                                                      journalentryitemamount = is_item-amount * -1
+                                                      currency = is_item-currency  ) ) "ilk belgenin para birimine göre olan ekleniyor.
+                                                    ) TO lt_glitem.
         ENDIF.
         <fs_je>-%param = VALUE #( companycode                  = is_item-companycode
                                   documentreferenceid          = is_item-documentreferenceid

@@ -36,7 +36,13 @@
                         documentitemtext              = is_item-documentitemtext102
                         _currencyamount = VALUE #( ( currencyrole = '00'
                                                     journalentryitemamount = is_item-amount
-                                                    currency = is_item-currency  ) )          ) TO lt_glitem.
+                                                    currency = is_item-currency  )
+                                                    ( currencyrole = COND #( WHEN is_item-arbitrage-arbitrage_currency = 'USD' THEN ms_companycode_parameter-currency_type_usd
+                                                                             WHEN is_item-arbitrage-arbitrage_currency = 'EUR' THEN ms_companycode_parameter-currency_type_eur
+                                                                             ELSE '10' )
+                                                      journalentryitemamount = is_item-arbitrage-arbitrage_amount
+                                                      currency = is_item-arbitrage-arbitrage_currency  ) ) "arbitraj para birimine göre olan satır ekleniyor.
+                                         ) TO lt_glitem.
 
         APPEND VALUE #( glaccountlineitem             = |002|
                         glaccount                     = is_item-arbitrage-arbitrage_account
@@ -47,7 +53,14 @@
                         documentitemtext              = is_item-arbitrage-arbitrage_item_text
                         _currencyamount = VALUE #( ( currencyrole = '00'
                                             journalentryitemamount = is_item-amount * -1
-                                            currency = is_item-currency  ) )          ) TO lt_glitem.
+                                            currency = is_item-currency  )
+                                                    ( currencyrole = COND #( WHEN is_item-arbitrage-arbitrage_currency = 'USD' THEN ms_companycode_parameter-currency_type_usd
+                                                                             WHEN is_item-arbitrage-arbitrage_currency = 'EUR' THEN ms_companycode_parameter-currency_type_eur
+                                                                             ELSE '10' )
+                                                      journalentryitemamount = is_item-arbitrage-arbitrage_amount * -1
+                                                      currency = is_item-arbitrage-arbitrage_currency  ) ) "arbitraj para birimine göre olan satır ekleniyor.
+                                            ) TO lt_glitem.
+
         <fs_je>-%param = VALUE #( companycode                  = is_item-companycode
                                   documentreferenceid          = is_item-documentreferenceid
                                   createdbyuser                = sy-uname
