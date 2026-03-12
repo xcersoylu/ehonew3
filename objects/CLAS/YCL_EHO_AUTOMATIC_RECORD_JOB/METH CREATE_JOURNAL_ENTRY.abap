@@ -77,9 +77,10 @@
     DATA lv_eur TYPE yeho_e_wrbtr.
     DATA lv_internal_transfer TYPE c LENGTH 1.
     DATA(lv_companycode) = VALUE #( mt_automatic_items[ 1 ]-companycode OPTIONAL ).
-    SELECT SINGLE * FROM yeho_t_company WHERE companycode = @lv_companycode INTO @DATA(ls_companycode_parameters).
+    CLEAR ms_companycode_parameters.
+    SELECT SINGLE * FROM yeho_t_company WHERE companycode = @lv_companycode INTO @ms_companycode_parameters.
     LOOP AT mt_automatic_items ASSIGNING FIELD-SYMBOL(<ls_item>).
-      IF ls_companycode_parameters-automatic_item_text IS NOT INITIAL.
+      IF ms_companycode_parameters-automatic_item_text IS NOT INITIAL.
         IF <ls_item>-rule_data-documentitemtext_1 IS INITIAL.
           <ls_item>-rule_data-documentitemtext_1 = <ls_item>-description.
         ENDIF.
@@ -90,177 +91,293 @@
       APPEND INITIAL LINE TO lt_je ASSIGNING FIELD-SYMBOL(<fs_je>).
       TRY.
           <fs_je>-%cid = to_upper( cl_uuid_factory=>create_system_uuid( )->create_uuid_x16( ) ).
-          IF <ls_item>-rule_data-taxcode IS NOT INITIAL.
-            get_tax_ratio(
-              EXPORTING
-                iv_taxcode     = <ls_item>-rule_data-taxcode
-                iv_companycode = <ls_item>-rule_data-companycode
-              RECEIVING
-                rv_ratio       = lv_tax_ratio
-            ).
-            IF <ls_item>-amount > 0.
-              <ls_item>-amount  *= -1.
+          IF <ls_item>-rule_no IS INITIAL.
+            DATA(lv_businesspartner) = find_bp( <ls_item> ).
+            IF lv_businesspartner IS NOT INITIAL.
+              DATA(lo_message) = cl_bali_message_setter=>create( severity = if_bali_constants=>c_severity_information
+                                                                 id = ycl_eho_utils=>mc_message_class
+                                                                 number = 025
+                                                                 variable_1 = CONV #( lv_businesspartner ) ).
+              mo_log->add_item( lo_message ).
+              APPEND VALUE #( glaccountlineitem             = |001|
+                              glaccount                     = <ls_item>-glaccount
+                              assignmentreference           = <ls_item>-assignmentreference
+                              reference1idbybusinesspartner = <ls_item>-reference1idbybusinesspartner
+                              reference2idbybusinesspartner = <ls_item>-reference2idbybusinesspartner
+                              reference3idbybusinesspartner = <ls_item>-reference3idbybusinesspartner
+                              documentitemtext              = <ls_item>-documentitemtext102
+                              _currencyamount = VALUE #( ( currencyrole = '00'
+                                                          journalentryitemamount = <ls_item>-amount
+                                                          currency = <ls_item>-currency  ) )          ) TO lt_glitem.
+              IF <ls_item>-amount > 0. "102 borç çalışıcak ise müşteridir.
+                APPEND VALUE #( glaccountlineitem              = |002|
+                                customer                       = lv_businesspartner
+                                 paymentmethod                 = <ls_item>-paymentmethod
+                                 paymentterms                  = <ls_item>-paymentterms
+                                 assignmentreference           = <ls_item>-assignmentreference
+                                 profitcenter                  = <ls_item>-profitcenter
+                                 reference1idbybusinesspartner = <ls_item>-reference1idbybusinesspartner
+                                 reference2idbybusinesspartner = <ls_item>-reference2idbybusinesspartner
+                                 reference3idbybusinesspartner = <ls_item>-reference3idbybusinesspartner
+                                 documentitemtext              = <ls_item>-documentitemtext
+                                 specialglcode                 = <ls_item>-specialglcode
+                                _currencyamount = VALUE #( ( currencyrole = '00'
+                                                            journalentryitemamount = -1 * <ls_item>-amount
+                                                            currency = <ls_item>-currency  ) ) ) TO lt_aritem.
+              ELSE.
+                APPEND VALUE #( glaccountlineitem              = |002|
+                                supplier                       = lv_businesspartner
+                                 paymentmethod                 = <ls_item>-paymentmethod
+                                 paymentterms                  = <ls_item>-paymentterms
+                                 assignmentreference           = <ls_item>-assignmentreference
+                                 profitcenter                  = <ls_item>-profitcenter
+                                 reference1idbybusinesspartner = <ls_item>-reference1idbybusinesspartner
+                                 reference2idbybusinesspartner = <ls_item>-reference2idbybusinesspartner
+                                 reference3idbybusinesspartner = <ls_item>-reference3idbybusinesspartner
+                                 documentitemtext              = <ls_item>-documentitemtext
+                                 specialglcode                 = <ls_item>-specialglcode
+                                _currencyamount = VALUE #( ( currencyrole = '00'
+                                                            journalentryitemamount = -1 * <ls_item>-amount
+                                                            currency = <ls_item>-currency  ) ) ) TO lt_apitem.
+              ENDIF.
+              <fs_je>-%param = VALUE #( companycode                  = <ls_item>-companycode
+                                        documentreferenceid          = <ls_item>-documentreferenceid
+                                        createdbyuser                = sy-uname
+                                        businesstransactiontype      = 'RFBU'
+                                        accountingdocumenttype       = COND #( WHEN lt_aritem IS INITIAL THEN 'KZ' ELSE 'DZ' )
+                                        documentdate                 = <ls_item>-physical_operation_date
+                                        postingdate                  = <ls_item>-physical_operation_date
+                                        accountingdocumentheadertext = <ls_item>-rule_data-accountingdocumentheadertext
+                                        taxdeterminationdate         = ycl_eho_utils=>get_local_time(  )-date
+                                        _apitems                     = VALUE #( FOR wa_apitem  IN lt_apitem  ( CORRESPONDING #( wa_apitem  MAPPING _currencyamount = _currencyamount ) ) )
+                                        _aritems                     = VALUE #( FOR wa_aritem  IN lt_aritem  ( CORRESPONDING #( wa_aritem  MAPPING _currencyamount = _currencyamount ) ) )
+                                        _glitems                     = VALUE #( FOR wa_glitem  IN lt_glitem  ( CORRESPONDING #( wa_glitem  MAPPING _currencyamount = _currencyamount ) ) )
+                                        _taxitems                    = VALUE #( FOR wa_taxitem  IN lt_taxitem  ( CORRESPONDING #( wa_taxitem  MAPPING _currencyamount = _currencyamount ) ) )
+                                      ).
+            ELSE.
+*virman mı diye kontrol ediliyor.
+              SELECT SINGLE * FROM yeho_t_bankpass WHERE iban = @<ls_item>-sender_iban INTO @DATA(ls_bankpass).
+              IF sy-subrc = 0. "virman kaydı.
+                lv_internal_transfer = abap_true.
+                APPEND VALUE #( glaccountlineitem             = |001|
+                                glaccount                     = <ls_item>-glaccount
+                                assignmentreference           = <ls_item>-assignmentreference
+                                reference1idbybusinesspartner = <ls_item>-reference1idbybusinesspartner
+                                reference2idbybusinesspartner = <ls_item>-reference2idbybusinesspartner
+                                reference3idbybusinesspartner = <ls_item>-reference3idbybusinesspartner
+                                documentitemtext              = <ls_item>-documentitemtext102
+                                _currencyamount = VALUE #( ( currencyrole = '00'
+                                                            journalentryitemamount = <ls_item>-amount
+                                                            currency = <ls_item>-currency  ) )          ) TO lt_glitem.
+
+
+                APPEND VALUE #( glaccountlineitem             = |002|
+                                glaccount                     = ls_bankpass-glaccount
+                                assignmentreference           = <ls_item>-assignmentreference
+                                reference1idbybusinesspartner = <ls_item>-reference1idbybusinesspartner
+                                reference2idbybusinesspartner = <ls_item>-reference2idbybusinesspartner
+                                reference3idbybusinesspartner = <ls_item>-reference3idbybusinesspartner
+                                documentitemtext              = <ls_item>-documentitemtext
+                                _currencyamount = VALUE #( ( currencyrole = '00'
+                                                        journalentryitemamount = <ls_item>-amount * -1
+                                                        currency = <ls_item>-currency  ) )           ) TO lt_glitem.
+
+                <fs_je>-%param = VALUE #( companycode                  = <ls_item>-companycode
+                                          documentreferenceid          = <ls_item>-documentreferenceid
+                                          createdbyuser                = sy-uname
+                                          businesstransactiontype      = 'RFBU'
+                                          accountingdocumenttype       = 'SA'
+                                          documentdate                 = <ls_item>-physical_operation_date
+                                          postingdate                  = <ls_item>-physical_operation_date
+                                          accountingdocumentheadertext = <ls_item>-rule_data-accountingdocumentheadertext
+                                          taxdeterminationdate         = ycl_eho_utils=>get_local_time(  )-date
+                                          _apitems                     = VALUE #( FOR wa_apitem  IN lt_apitem  ( CORRESPONDING #( wa_apitem  MAPPING _currencyamount = _currencyamount ) ) )
+                                          _aritems                     = VALUE #( FOR wa_aritem  IN lt_aritem  ( CORRESPONDING #( wa_aritem  MAPPING _currencyamount = _currencyamount ) ) )
+                                          _glitems                     = VALUE #( FOR wa_glitem  IN lt_glitem  ( CORRESPONDING #( wa_glitem  MAPPING _currencyamount = _currencyamount ) ) )
+                                          _taxitems                    = VALUE #( FOR wa_taxitem  IN lt_taxitem  ( CORRESPONDING #( wa_taxitem  MAPPING _currencyamount = _currencyamount ) ) )
+                                        ).
+
+              ELSE.
+                lo_message = cl_bali_message_setter=>create( severity = if_bali_constants=>c_severity_information
+                                                                   id = ycl_eho_utils=>mc_message_class
+                                                                   number = 026
+                                                                   variable_1 = CONV #( <ls_item>-sender_iban ) ).
+                mo_log->add_item( lo_message ).
+              ENDIF.
             ENDIF.
-            lv_taxamount = <ls_item>-amount - ( <ls_item>-amount / ( 1 + ( lv_tax_ratio / 100 ) ) ).
+          ELSE.
+            IF <ls_item>-rule_data-taxcode IS NOT INITIAL.
+              get_tax_ratio(
+                EXPORTING
+                  iv_taxcode     = <ls_item>-rule_data-taxcode
+                  iv_companycode = <ls_item>-rule_data-companycode
+                RECEIVING
+                  rv_ratio       = lv_tax_ratio
+              ).
+              IF <ls_item>-amount > 0.
+                <ls_item>-amount  *= -1.
+              ENDIF.
+              lv_taxamount = <ls_item>-amount - ( <ls_item>-amount / ( 1 + ( lv_tax_ratio / 100 ) ) ).
 *her zaman ekrandaki - olan satırlar için vergi göstergesi girilebilecekmiş o yüzden vergi göstergesi - bulunuyor bu yüzden mutlak değeri alınıyor.
 *örneğin 102 li hesaba -100
 * 760 lı hesaba 83,33
 * 191 li kdv hesaba 16,67 atılıyor.
-            lv_taxamount = abs( lv_taxamount ).
-            lv_taxbaseamount = <ls_item>-amount + lv_taxamount.
-            lv_taxbaseamount = abs( lv_taxbaseamount ).
-            APPEND VALUE #( glaccountlineitem     = |003|
-                            taxcode               = <ls_item>-rule_data-taxcode
-                            taxitemclassification = 'VST'
-                            conditiontype         = 'MWVS'
-                            taxrate               = lv_tax_ratio
-                            _currencyamount = VALUE #( ( currencyrole = '00'
-                                                         journalentryitemamount = lv_taxamount
-                                                         currency = <ls_item>-currency
-                                                         taxamount = lv_taxamount
-                                                         taxbaseamount = lv_taxbaseamount ) ) ) TO lt_taxitem.
-          ENDIF.
-          IF <ls_item>-rule_data-exchange_rate_type IS NOT INITIAL.
-            DATA(lv_usd_rate) = ycl_eho_utils=>get_exchange_rate(
-                             iv_exchangeratetype = <ls_item>-rule_data-exchange_rate_type
-                             iv_sourcecurrency   = 'TRY'
-                             iv_targetcurrency   = 'USD'
-                             iv_exchangeratedate = <ls_item>-physical_operation_date
-                           ).
-            lv_usd =  <ls_item>-amount / lv_usd_rate.
-            DATA(lv_eur_rate) = ycl_eho_utils=>get_exchange_rate(
-                             iv_exchangeratetype = <ls_item>-rule_data-exchange_rate_type
-                             iv_sourcecurrency   = 'TRY'
-                             iv_targetcurrency   = 'EUR'
-                             iv_exchangeratedate = <ls_item>-physical_operation_date
-                           ).
-            lv_eur = <ls_item>-amount / lv_eur_rate.
-          ENDIF.
-          APPEND VALUE #( glaccountlineitem             = |001|
-                          glaccount                     = <ls_item>-rule_data-account_no_102
-                          assignmentreference           = <ls_item>-rule_data-assignmentreference
-                          reference1idbybusinesspartner = <ls_item>-rule_data-reference1idbybusinesspartner
-                          reference2idbybusinesspartner = <ls_item>-rule_data-reference2idbybusinesspartner
-                          reference3idbybusinesspartner = <ls_item>-rule_data-reference3idbybusinesspartner
+              lv_taxamount = abs( lv_taxamount ).
+              lv_taxbaseamount = <ls_item>-amount + lv_taxamount.
+              lv_taxbaseamount = abs( lv_taxbaseamount ).
+              APPEND VALUE #( glaccountlineitem     = |003|
+                              taxcode               = <ls_item>-rule_data-taxcode
+                              taxitemclassification = 'VST'
+                              conditiontype         = 'MWVS'
+                              taxrate               = lv_tax_ratio
+                              _currencyamount = VALUE #( ( currencyrole = '00'
+                                                           journalentryitemamount = lv_taxamount
+                                                           currency = <ls_item>-currency
+                                                           taxamount = lv_taxamount
+                                                           taxbaseamount = lv_taxbaseamount ) ) ) TO lt_taxitem.
+            ENDIF.
+            IF <ls_item>-rule_data-exchange_rate_type IS NOT INITIAL.
+              DATA(lv_usd_rate) = ycl_eho_utils=>get_exchange_rate(
+                               iv_exchangeratetype = <ls_item>-rule_data-exchange_rate_type
+                               iv_sourcecurrency   = 'TRY'
+                               iv_targetcurrency   = 'USD'
+                               iv_exchangeratedate = <ls_item>-physical_operation_date
+                             ).
+              lv_usd =  <ls_item>-amount / lv_usd_rate.
+              DATA(lv_eur_rate) = ycl_eho_utils=>get_exchange_rate(
+                               iv_exchangeratetype = <ls_item>-rule_data-exchange_rate_type
+                               iv_sourcecurrency   = 'TRY'
+                               iv_targetcurrency   = 'EUR'
+                               iv_exchangeratedate = <ls_item>-physical_operation_date
+                             ).
+              lv_eur = <ls_item>-amount / lv_eur_rate.
+            ENDIF.
+            APPEND VALUE #( glaccountlineitem             = |001|
+                            glaccount                     = <ls_item>-rule_data-account_no_102
+                            assignmentreference           = <ls_item>-rule_data-assignmentreference
+                            reference1idbybusinesspartner = <ls_item>-rule_data-reference1idbybusinesspartner
+                            reference2idbybusinesspartner = <ls_item>-rule_data-reference2idbybusinesspartner
+                            reference3idbybusinesspartner = <ls_item>-rule_data-reference3idbybusinesspartner
 *                          costcenter                    = <ls_item>-rule_data-costcenter
-                          documentitemtext              = <ls_item>-rule_data-documentitemtext_1
-                          _currencyamount = VALUE #( ( currencyrole = '00'
-                                                      journalentryitemamount = <ls_item>-amount
-                                                      currency = <ls_item>-currency  ) )          ) TO lt_glitem.
-          IF <ls_item>-rule_data-exchange_rate_type IS NOT INITIAL.
-            LOOP AT lt_glitem ASSIGNING FIELD-SYMBOL(<ls_glitem>).
-              APPEND VALUE #( currencyrole = ls_companycode_parameters-currency_type_usd
-                              journalentryitemamount = lv_usd
-                              currency = 'USD' ) TO <ls_glitem>-_currencyamount.
-              APPEND VALUE #( currencyrole = ls_companycode_parameters-currency_type_eur
-                              journalentryitemamount = lv_eur
-                              currency = 'EUR' ) TO <ls_glitem>-_currencyamount.
-            ENDLOOP.
-          ENDIF.
-          IF <ls_item>-rule_data-supplier IS NOT INITIAL.
-            APPEND VALUE #( glaccountlineitem             = |002|
-                            supplier                      = <ls_item>-rule_data-supplier
-*                            glaccount                     = <ls_item>-rule_data-reconciliationaccount
-                            paymentmethod                 = <ls_item>-rule_data-paymentmethod
-                            paymentterms                  = <ls_item>-rule_data-paymentterms
-                            assignmentreference           = <ls_item>-rule_data-assignmentreference
-                            profitcenter                  = <ls_item>-rule_data-profitcenter
-***                            creditcontrolarea             = <ls_item>-creditcontrolarea
-                            reference1idbybusinesspartner = <ls_item>-rule_data-reference1idbybusinesspartner
-                            reference2idbybusinesspartner = <ls_item>-rule_data-reference2idbybusinesspartner
-                            reference3idbybusinesspartner = <ls_item>-rule_data-reference3idbybusinesspartner
-                            documentitemtext              = <ls_item>-rule_data-documentitemtext_2
-                            specialglcode                 = <ls_item>-rule_data-specialglcode
+                            documentitemtext              = <ls_item>-rule_data-documentitemtext_1
                             _currencyamount = VALUE #( ( currencyrole = '00'
-                                                       journalentryitemamount = -1 * <ls_item>-amount
-                                                       currency = <ls_item>-currency  ) ) ) TO lt_apitem.
-            IF <ls_item>-rule_data-exchange_rate_type IS NOT INITIAL.
-              LOOP AT lt_apitem ASSIGNING FIELD-SYMBOL(<ls_apitem>).
-                APPEND VALUE #( currencyrole = ls_companycode_parameters-currency_type_usd
-                                journalentryitemamount = lv_usd * -1
-                                currency = 'USD' ) TO <ls_apitem>-_currencyamount.
-                APPEND VALUE #( currencyrole = ls_companycode_parameters-currency_type_eur
-                                journalentryitemamount = lv_eur * -1
-                                currency = 'EUR' ) TO <ls_apitem>-_currencyamount.
-              ENDLOOP.
-            ENDIF.
-          ELSEIF <ls_item>-rule_data-customer IS NOT INITIAL.
-            APPEND VALUE #( glaccountlineitem              = |002|
-                            customer                       = <ls_item>-rule_data-customer
-*                             glaccount                     = <ls_item>-rule_data-reconciliationaccount
-                             paymentmethod                 = <ls_item>-rule_data-paymentmethod
-                             paymentterms                  = <ls_item>-rule_data-paymentterms
-                             assignmentreference           = <ls_item>-rule_data-assignmentreference
-                             profitcenter                  = <ls_item>-rule_data-profitcenter
-***                             creditcontrolarea             = <ls_item>-creditcontrolarea
-                             reference1idbybusinesspartner = <ls_item>-rule_data-reference1idbybusinesspartner
-                             reference2idbybusinesspartner = <ls_item>-rule_data-reference2idbybusinesspartner
-                             reference3idbybusinesspartner = <ls_item>-rule_data-reference3idbybusinesspartner
-                             documentitemtext              = <ls_item>-rule_data-documentitemtext_2
-                             specialglcode                 = <ls_item>-rule_data-specialglcode
-                            _currencyamount = VALUE #( ( currencyrole = '00'
-                                                        journalentryitemamount = -1 * <ls_item>-amount
-                                                        currency = <ls_item>-currency  ) ) ) TO lt_aritem.
-            IF <ls_item>-rule_data-exchange_rate_type IS NOT INITIAL.
-              LOOP AT lt_apitem ASSIGNING FIELD-SYMBOL(<ls_aritem>).
-                APPEND VALUE #( currencyrole = ls_companycode_parameters-currency_type_usd
-                                journalentryitemamount = lv_usd * -1
-                                currency = 'USD' ) TO <ls_aritem>-_currencyamount.
-                APPEND VALUE #( currencyrole = ls_companycode_parameters-currency_type_eur
-                                journalentryitemamount = lv_eur * -1
-                                currency = 'EUR' ) TO <ls_aritem>-_currencyamount.
-              ENDLOOP.
-            ENDIF.
-          ELSEIF <ls_item>-rule_data-account_no IS NOT INITIAL.
-*kendine virman mı?
-            SELECT SINGLE * FROM yeho_t_bankpass WHERE companycode = @<ls_item>-rule_data-companycode
-                                                   AND glaccount = @<ls_item>-rule_data-account_no
-            INTO @DATA(ls_bankpass).
-            IF sy-subrc = 0.
-              lv_internal_transfer = abap_true.
-            ENDIF.
-            APPEND VALUE #( glaccountlineitem             = |002|
-                            glaccount                     = <ls_item>-rule_data-account_no
-                            assignmentreference           = <ls_item>-rule_data-assignmentreference
-                            reference1idbybusinesspartner = <ls_item>-rule_data-reference1idbybusinesspartner
-                            reference2idbybusinesspartner = <ls_item>-rule_data-reference2idbybusinesspartner
-                            reference3idbybusinesspartner = <ls_item>-rule_data-reference3idbybusinesspartner
-                            costcenter                    = <ls_item>-rule_data-costcenter
-                            profitcenter                  = <ls_item>-rule_data-profitcenter
-                            orderid                       = <ls_item>-rule_data-orderid
-                            documentitemtext              = <ls_item>-rule_data-documentitemtext_2
-                            specialglcode                 = <ls_item>-rule_data-specialglcode
-                            taxcode                       = <ls_item>-rule_data-taxcode
-                            _currencyamount = VALUE #( ( currencyrole = '00'
-                                                        journalentryitemamount = COND #( WHEN <ls_item>-taxcode IS INITIAL
-                                                                                         THEN <ls_item>-amount * -1
-                                                                                         ELSE lv_taxbaseamount )
+                                                        journalentryitemamount = <ls_item>-amount
                                                         currency = <ls_item>-currency  ) )          ) TO lt_glitem.
             IF <ls_item>-rule_data-exchange_rate_type IS NOT INITIAL.
-              LOOP AT lt_glitem ASSIGNING <ls_glitem> WHERE glaccountlineitem = '002'.
-                APPEND VALUE #( currencyrole = ls_companycode_parameters-currency_type_usd
-                                journalentryitemamount = lv_usd * -1
+              LOOP AT lt_glitem ASSIGNING FIELD-SYMBOL(<ls_glitem>).
+                APPEND VALUE #( currencyrole = ms_companycode_parameters-currency_type_usd
+                                journalentryitemamount = lv_usd
                                 currency = 'USD' ) TO <ls_glitem>-_currencyamount.
-                APPEND VALUE #( currencyrole = ls_companycode_parameters-currency_type_eur
-                                journalentryitemamount = lv_eur * -1
+                APPEND VALUE #( currencyrole = ms_companycode_parameters-currency_type_eur
+                                journalentryitemamount = lv_eur
                                 currency = 'EUR' ) TO <ls_glitem>-_currencyamount.
               ENDLOOP.
             ENDIF.
+            IF <ls_item>-rule_data-supplier IS NOT INITIAL.
+              APPEND VALUE #( glaccountlineitem             = |002|
+                              supplier                      = <ls_item>-rule_data-supplier
+*                            glaccount                     = <ls_item>-rule_data-reconciliationaccount
+                              paymentmethod                 = <ls_item>-rule_data-paymentmethod
+                              paymentterms                  = <ls_item>-rule_data-paymentterms
+                              assignmentreference           = <ls_item>-rule_data-assignmentreference
+                              profitcenter                  = <ls_item>-rule_data-profitcenter
+***                            creditcontrolarea             = <ls_item>-creditcontrolarea
+                              reference1idbybusinesspartner = <ls_item>-rule_data-reference1idbybusinesspartner
+                              reference2idbybusinesspartner = <ls_item>-rule_data-reference2idbybusinesspartner
+                              reference3idbybusinesspartner = <ls_item>-rule_data-reference3idbybusinesspartner
+                              documentitemtext              = <ls_item>-rule_data-documentitemtext_2
+                              specialglcode                 = <ls_item>-rule_data-specialglcode
+                              _currencyamount = VALUE #( ( currencyrole = '00'
+                                                         journalentryitemamount = -1 * <ls_item>-amount
+                                                         currency = <ls_item>-currency  ) ) ) TO lt_apitem.
+              IF <ls_item>-rule_data-exchange_rate_type IS NOT INITIAL.
+                LOOP AT lt_apitem ASSIGNING FIELD-SYMBOL(<ls_apitem>).
+                  APPEND VALUE #( currencyrole = ms_companycode_parameters-currency_type_usd
+                                  journalentryitemamount = lv_usd * -1
+                                  currency = 'USD' ) TO <ls_apitem>-_currencyamount.
+                  APPEND VALUE #( currencyrole = ms_companycode_parameters-currency_type_eur
+                                  journalentryitemamount = lv_eur * -1
+                                  currency = 'EUR' ) TO <ls_apitem>-_currencyamount.
+                ENDLOOP.
+              ENDIF.
+            ELSEIF <ls_item>-rule_data-customer IS NOT INITIAL.
+              APPEND VALUE #( glaccountlineitem              = |002|
+                              customer                       = <ls_item>-rule_data-customer
+*                             glaccount                     = <ls_item>-rule_data-reconciliationaccount
+                               paymentmethod                 = <ls_item>-rule_data-paymentmethod
+                               paymentterms                  = <ls_item>-rule_data-paymentterms
+                               assignmentreference           = <ls_item>-rule_data-assignmentreference
+                               profitcenter                  = <ls_item>-rule_data-profitcenter
+***                             creditcontrolarea             = <ls_item>-creditcontrolarea
+                               reference1idbybusinesspartner = <ls_item>-rule_data-reference1idbybusinesspartner
+                               reference2idbybusinesspartner = <ls_item>-rule_data-reference2idbybusinesspartner
+                               reference3idbybusinesspartner = <ls_item>-rule_data-reference3idbybusinesspartner
+                               documentitemtext              = <ls_item>-rule_data-documentitemtext_2
+                               specialglcode                 = <ls_item>-rule_data-specialglcode
+                              _currencyamount = VALUE #( ( currencyrole = '00'
+                                                          journalentryitemamount = -1 * <ls_item>-amount
+                                                          currency = <ls_item>-currency  ) ) ) TO lt_aritem.
+              IF <ls_item>-rule_data-exchange_rate_type IS NOT INITIAL.
+                LOOP AT lt_apitem ASSIGNING FIELD-SYMBOL(<ls_aritem>).
+                  APPEND VALUE #( currencyrole = ms_companycode_parameters-currency_type_usd
+                                  journalentryitemamount = lv_usd * -1
+                                  currency = 'USD' ) TO <ls_aritem>-_currencyamount.
+                  APPEND VALUE #( currencyrole = ms_companycode_parameters-currency_type_eur
+                                  journalentryitemamount = lv_eur * -1
+                                  currency = 'EUR' ) TO <ls_aritem>-_currencyamount.
+                ENDLOOP.
+              ENDIF.
+            ELSEIF <ls_item>-rule_data-account_no IS NOT INITIAL.
+*kendine virman mı?
+              SELECT SINGLE * FROM yeho_t_bankpass WHERE companycode = @<ls_item>-rule_data-companycode
+                                                     AND glaccount = @<ls_item>-rule_data-account_no
+              INTO @ls_bankpass.
+              IF sy-subrc = 0.
+                lv_internal_transfer = abap_true.
+              ENDIF.
+              APPEND VALUE #( glaccountlineitem             = |002|
+                              glaccount                     = <ls_item>-rule_data-account_no
+                              assignmentreference           = <ls_item>-rule_data-assignmentreference
+                              reference1idbybusinesspartner = <ls_item>-rule_data-reference1idbybusinesspartner
+                              reference2idbybusinesspartner = <ls_item>-rule_data-reference2idbybusinesspartner
+                              reference3idbybusinesspartner = <ls_item>-rule_data-reference3idbybusinesspartner
+                              costcenter                    = <ls_item>-rule_data-costcenter
+                              profitcenter                  = <ls_item>-rule_data-profitcenter
+                              orderid                       = <ls_item>-rule_data-orderid
+                              documentitemtext              = <ls_item>-rule_data-documentitemtext_2
+                              specialglcode                 = <ls_item>-rule_data-specialglcode
+                              taxcode                       = <ls_item>-rule_data-taxcode
+                              _currencyamount = VALUE #( ( currencyrole = '00'
+                                                          journalentryitemamount = COND #( WHEN <ls_item>-taxcode IS INITIAL
+                                                                                           THEN <ls_item>-amount * -1
+                                                                                           ELSE lv_taxbaseamount )
+                                                          currency = <ls_item>-currency  ) )          ) TO lt_glitem.
+              IF <ls_item>-rule_data-exchange_rate_type IS NOT INITIAL.
+                LOOP AT lt_glitem ASSIGNING <ls_glitem> WHERE glaccountlineitem = '002'.
+                  APPEND VALUE #( currencyrole = ms_companycode_parameters-currency_type_usd
+                                  journalentryitemamount = lv_usd * -1
+                                  currency = 'USD' ) TO <ls_glitem>-_currencyamount.
+                  APPEND VALUE #( currencyrole = ms_companycode_parameters-currency_type_eur
+                                  journalentryitemamount = lv_eur * -1
+                                  currency = 'EUR' ) TO <ls_glitem>-_currencyamount.
+                ENDLOOP.
+              ENDIF.
+            ENDIF.
+            <fs_je>-%param = VALUE #( companycode                  = <ls_item>-rule_data-companycode
+                                      documentreferenceid          = <ls_item>-rule_data-documentreferenceid
+                                      createdbyuser                = sy-uname
+                                      businesstransactiontype      = 'RFBU'
+                                      accountingdocumenttype       = <ls_item>-rule_data-document_type
+                                      documentdate                 = <ls_item>-physical_operation_date
+                                      postingdate                  = <ls_item>-physical_operation_date
+                                      accountingdocumentheadertext = <ls_item>-rule_data-accountingdocumentheadertext
+                                      taxdeterminationdate         = ycl_eho_utils=>get_local_time(  )-date
+                                      _apitems                     = VALUE #( FOR wa_apitem  IN lt_apitem  ( CORRESPONDING #( wa_apitem  MAPPING _currencyamount = _currencyamount ) ) )
+                                      _aritems                     = VALUE #( FOR wa_aritem  IN lt_aritem  ( CORRESPONDING #( wa_aritem  MAPPING _currencyamount = _currencyamount ) ) )
+                                      _glitems                     = VALUE #( FOR wa_glitem  IN lt_glitem  ( CORRESPONDING #( wa_glitem  MAPPING _currencyamount = _currencyamount ) ) )
+                                      _taxitems                    = VALUE #( FOR wa_taxitem  IN lt_taxitem  ( CORRESPONDING #( wa_taxitem  MAPPING _currencyamount = _currencyamount ) ) )
+                                    ).
           ENDIF.
-          <fs_je>-%param = VALUE #( companycode                  = <ls_item>-rule_data-companycode
-                                    documentreferenceid          = <ls_item>-rule_data-documentreferenceid
-                                    createdbyuser                = sy-uname
-                                    businesstransactiontype      = 'RFBU'
-                                    accountingdocumenttype       = <ls_item>-rule_data-document_type
-                                    documentdate                 = <ls_item>-physical_operation_date
-                                    postingdate                  = <ls_item>-physical_operation_date
-                                    accountingdocumentheadertext = <ls_item>-rule_data-accountingdocumentheadertext
-                                    taxdeterminationdate         = ycl_eho_utils=>get_local_time(  )-date
-                                    _apitems                     = VALUE #( FOR wa_apitem  IN lt_apitem  ( CORRESPONDING #( wa_apitem  MAPPING _currencyamount = _currencyamount ) ) )
-                                    _aritems                     = VALUE #( FOR wa_aritem  IN lt_aritem  ( CORRESPONDING #( wa_aritem  MAPPING _currencyamount = _currencyamount ) ) )
-                                    _glitems                     = VALUE #( FOR wa_glitem  IN lt_glitem  ( CORRESPONDING #( wa_glitem  MAPPING _currencyamount = _currencyamount ) ) )
-                                    _taxitems                    = VALUE #( FOR wa_taxitem  IN lt_taxitem  ( CORRESPONDING #( wa_taxitem  MAPPING _currencyamount = _currencyamount ) ) )
-                                  ).
           WAIT UP TO 1 SECONDS.
           MODIFY ENTITIES OF i_journalentrytp
            ENTITY journalentry
@@ -281,7 +398,7 @@
              REPORTED DATA(ls_commit_reported).
             COMMIT ENTITIES END.
             IF ls_commit_failed IS INITIAL.
-              DATA(lo_message) = cl_bali_message_setter=>create( severity = if_bali_constants=>c_severity_information
+              lo_message = cl_bali_message_setter=>create( severity = if_bali_constants=>c_severity_information
                                                                  id = ycl_eho_utils=>mc_message_class
                                                                  number = 016
                                                                  variable_1 = VALUE #( ls_commit_reported-journalentry[ 1 ]-accountingdocument OPTIONAL ) ).
@@ -305,7 +422,8 @@
           ENDIF.
           CLEAR : lt_je, lt_glitem , lt_apitem , lt_aritem , ls_failed ,
                   ls_reported , ls_commit_failed , ls_commit_reported , lv_internal_transfer,
-                  lv_usd_rate , lv_usd , lv_eur_rate , lv_eur.
+                  lv_usd_rate , lv_usd , lv_eur_rate , lv_eur,
+                  lv_businesspartner.
         CATCH cx_uuid_error INTO DATA(lx_error).
         CATCH cx_bali_runtime INTO DATA(lx_bali_runtime).
           lo_free = cl_bali_free_text_setter=>create( severity = if_bali_constants=>c_severity_warning

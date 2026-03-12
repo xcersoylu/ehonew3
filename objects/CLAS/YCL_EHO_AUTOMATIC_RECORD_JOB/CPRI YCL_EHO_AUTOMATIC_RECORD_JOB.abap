@@ -4,6 +4,7 @@
     DATA mt_glaccount_range TYPE RANGE OF hkont.
     DATA mv_date TYPE datum.
     DATA mo_log TYPE REF TO if_bali_log.
+    DATA ms_companycode_parameters TYPE yeho_t_company.
     METHODS get_items.
     METHODS get_rule CHANGING ct_items TYPE yeho_tt_bank_automatic_items.
     METHODS get_rule_data
@@ -15,3 +16,5 @@
     METHODS get_tax_ratio IMPORTING iv_taxcode      TYPE mwskz
                                     iv_companycode  TYPE bukrs
                           RETURNING VALUE(rv_ratio) TYPE yeho_e_tax_ratio.
+    METHODS find_bp IMPORTING is_item                   TYPE yeho_s_bank_automatic_items
+                    RETURNING VALUE(rv_businesspartner) TYPE i_businesspartner-businesspartner.

@@ -38,7 +38,7 @@
     ELSE.
       get_rule( CHANGING ct_items = mt_automatic_items ).
     ENDIF.
-    DELETE mt_automatic_items WHERE rule_no IS INITIAL.
+*    DELETE mt_automatic_items WHERE rule_no IS INITIAL.
     IF mt_automatic_items IS INITIAL.
       TRY.
           lo_message = cl_bali_message_setter=>create( severity = if_bali_constants=>c_severity_information
