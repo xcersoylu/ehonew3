@@ -10,13 +10,14 @@ authorization master ( instance )
   create;
   update;
   delete;
-  field ( readonly : update ) Companycode, TransactionType, TaxNumber, Customer, Supplier;
+  field ( readonly : update ) Companycode, TransactionType, TaxNumber, Customer, Supplier,BusinessPartnerGrouping;
   mapping for yeho_t_otoexc
     {
-      Companycode     = companycode;
-      TransactionType = transaction_type;
-      TaxNumber       = tax_number;
-      Customer        = customer;
-      Supplier        = supplier;
+      Companycode             = companycode;
+      TransactionType         = transaction_type;
+      TaxNumber               = tax_number;
+      Customer                = customer;
+      Supplier                = supplier;
+      BusinessPartnerGrouping = businesspartnergrouping;
     }
 }

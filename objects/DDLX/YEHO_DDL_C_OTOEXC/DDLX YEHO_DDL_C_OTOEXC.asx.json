@@ -7,9 +7,9 @@
     "DDLXNAME":"YEHO_DDL_C_OTOEXC",
     "VERSION":"A",
     "CHANGED_BY":"SAP_CUSTOMER",
-    "CHANGED_ON":"2024-11-05",
-    "CHANGED_AT":"14:15:33",
-    "UUID":"CB92D17136801EEFA6F00D5EFD728275",
+    "CHANGED_ON":"2026-05-11",
+    "CHANGED_AT":"13:11:05",
+    "UUID":"FA163EBBCF7E1FE193A75BBB4DC1E8EA",
     "ABAP_LANGUAGE_VERSION":"5"
    }
   ]
@@ -34,7 +34,7 @@
     "DDLXNAME":"YEHO_DDL_C_OTOEXC",
     "VERSION":"A",
     "UUID":"",
-    "SOURCE":"@Metadata.layer: #CORE\r\nannotate entity YEHO_DDL_C_OTOEXC\r\n    with \r\n{\r\n  @UI.facet: [ { id:            'Otoexc',\r\n                 purpose:       #STANDARD,\r\n                 type:          #IDENTIFICATION_REFERENCE,\r\n                 label:         'Otomatik Kaydedilmeyecek Kural ve VKN',\r\n                 position:      10 }  ]\r\n    \r\n    @UI : { lineItem: [{  position: 10 }] , identification: [{  position: 10 }] }\r\nCompanycode;\r\n    @UI : { lineItem: [{  position: 20 }] , identification: [{  position: 20 }] }\r\nTransactionType;\r\n    @UI : { lineItem: [{  position: 30 }] , identification: [{  position: 30 }] }\r\nTaxNumber;\r\n    @UI : { lineItem: [{  position: 40 }] , identification: [{  position: 40 }] }\r\nCustomer;\r\n    @UI : { lineItem: [{  position: 50 }] , identification: [{  position: 50 }] }\r\nSupplier;\r\n    \r\n}"
+    "SOURCE":"@Metadata.layer: #CORE\r\nannotate entity YEHO_DDL_C_OTOEXC\r\n    with \r\n{\r\n  @UI.facet: [ { id:            'Otoexc',\r\n                 purpose:       #STANDARD,\r\n                 type:          #IDENTIFICATION_REFERENCE,\r\n                 label:         'Otomatik Kaydedilmeyecek Kural ve VKN',\r\n                 position:      10 }  ]\r\n    \r\n    @UI : { lineItem: [{  position: 10 }] , identification: [{  position: 10 }] }\r\nCompanycode;\r\n    @UI : { lineItem: [{  position: 20 }] , identification: [{  position: 20 }] }\r\nTransactionType;\r\n    @UI : { lineItem: [{  position: 30 }] , identification: [{  position: 30 }] }\r\nTaxNumber;\r\n    @UI : { lineItem: [{  position: 40 }] , identification: [{  position: 40 }] }\r\nCustomer;\r\n    @UI : { lineItem: [{  position: 50 }] , identification: [{  position: 50 }] }\r\nSupplier;\r\n    @UI : { lineItem: [{  position: 60 }] , identification: [{  position: 60 }] }\r\nBusinessPartnerGrouping;    \r\n}"
    }
   ]
  },
@@ -42,6 +42,20 @@
   "table":"DDLX_RT_DATA",
   "data":
   [
+   {
+    "DDLXNAME":"YEHO_DDL_C_OTOEXC",
+    "ELEMENT":"BUSINESSPARTNERGROUPING",
+    "NAME":"UI.IDENTIFICATION$1$.POSITION",
+    "ELEMENT_TYPE":"S",
+    "VALUE":"60"
+   },
+   {
+    "DDLXNAME":"YEHO_DDL_C_OTOEXC",
+    "ELEMENT":"BUSINESSPARTNERGROUPING",
+    "NAME":"UI.LINEITEM$1$.POSITION",
+    "ELEMENT_TYPE":"S",
+    "VALUE":"60"
+   },
    {
     "DDLXNAME":"YEHO_DDL_C_OTOEXC",
     "ELEMENT":"COMPANYCODE",
@@ -178,8 +192,8 @@
     "EXTENDED_ARTIFACT":"YEHO_DDL_C_OTOEXC",
     "VARIANT":"",
     "LAYER":1500,
-    "DT_UUID":"CB92D17136801EEFA6F00D5EFD728275",
-    "RT_HASH":"E6E70F5E24873A5068CA360CEE00E287A457C7E8",
+    "DT_UUID":"FA163EBBCF7E1FE193A75BBB4DC1E8EA",
+    "RT_HASH":"DAA45F18A843E6E6E323A4EADB474EF1D6339615",
     "GEN_VERSION":"0",
     "TYPE":"0"
    }

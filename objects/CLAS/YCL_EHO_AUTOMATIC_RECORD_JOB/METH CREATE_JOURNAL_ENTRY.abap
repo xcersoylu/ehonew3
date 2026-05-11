@@ -92,13 +92,24 @@
       TRY.
           <fs_je>-%cid = to_upper( cl_uuid_factory=>create_system_uuid( )->create_uuid_x16( ) ).
           IF <ls_item>-rule_no IS INITIAL.
-            DATA(lv_businesspartner) = find_bp( <ls_item> ).
-            IF lv_businesspartner IS NOT INITIAL.
-              DATA(lo_message) = cl_bali_message_setter=>create( severity = if_bali_constants=>c_severity_information
-                                                                 id = ycl_eho_utils=>mc_message_class
-                                                                 number = 025
-                                                                 variable_1 = CONV #( lv_businesspartner ) ).
-              mo_log->add_item( lo_message ).
+            SELECT SINGLE * FROM yeho_t_bankpass WHERE iban = @<ls_item>-sender_iban INTO @DATA(ls_bankpass).
+            IF sy-subrc = 0. "virman
+              lv_internal_transfer = abap_true.
+*            ELSE. "vkn den kontrol edelim her zaman iban dolmuyor.
+*              IF <ls_item>-payee_vkn IS NOT INITIAL AND ( <ls_item>-payee_vkn <> ms_companycode_parameters-tax_number ).
+*                SELECT SINGLE * FROM yeho_t_company WHERE tax_number = @<ls_item>-payee_vkn INTO @DATA(ls_company_vkn).
+*                IF sy-subrc = 0.
+*                  lv_internal_transfer = abap_true.
+*                ENDIF.
+*              ELSEIF <ls_item>-debtor_vkn IS NOT INITIAL AND ( <ls_item>-debtor_vkn <> ms_companycode_parameters-tax_number ).
+*                SELECT SINGLE * FROM yeho_t_company WHERE tax_number = @<ls_item>-debtor_vkn INTO @ls_company_vkn.
+*                IF sy-subrc = 0.
+*                  lv_internal_transfer = abap_true.
+*                ENDIF.
+*              ENDIF.
+*            ENDIF.
+*
+*            IF lv_internal_transfer = abap_true. "virman
               APPEND VALUE #( glaccountlineitem             = |001|
                               glaccount                     = <ls_item>-glaccount
                               assignmentreference           = <ls_item>-assignmentreference
@@ -109,42 +120,24 @@
                               _currencyamount = VALUE #( ( currencyrole = '00'
                                                           journalentryitemamount = <ls_item>-amount
                                                           currency = <ls_item>-currency  ) )          ) TO lt_glitem.
-              IF <ls_item>-amount > 0. "102 borç çalışıcak ise müşteridir.
-                APPEND VALUE #( glaccountlineitem              = |002|
-                                customer                       = lv_businesspartner
-                                 paymentmethod                 = <ls_item>-paymentmethod
-                                 paymentterms                  = <ls_item>-paymentterms
-                                 assignmentreference           = <ls_item>-assignmentreference
-                                 profitcenter                  = <ls_item>-profitcenter
-                                 reference1idbybusinesspartner = <ls_item>-reference1idbybusinesspartner
-                                 reference2idbybusinesspartner = <ls_item>-reference2idbybusinesspartner
-                                 reference3idbybusinesspartner = <ls_item>-reference3idbybusinesspartner
-                                 documentitemtext              = <ls_item>-documentitemtext
-                                 specialglcode                 = <ls_item>-specialglcode
-                                _currencyamount = VALUE #( ( currencyrole = '00'
-                                                            journalentryitemamount = -1 * <ls_item>-amount
-                                                            currency = <ls_item>-currency  ) ) ) TO lt_aritem.
-              ELSE.
-                APPEND VALUE #( glaccountlineitem              = |002|
-                                supplier                       = lv_businesspartner
-                                 paymentmethod                 = <ls_item>-paymentmethod
-                                 paymentterms                  = <ls_item>-paymentterms
-                                 assignmentreference           = <ls_item>-assignmentreference
-                                 profitcenter                  = <ls_item>-profitcenter
-                                 reference1idbybusinesspartner = <ls_item>-reference1idbybusinesspartner
-                                 reference2idbybusinesspartner = <ls_item>-reference2idbybusinesspartner
-                                 reference3idbybusinesspartner = <ls_item>-reference3idbybusinesspartner
-                                 documentitemtext              = <ls_item>-documentitemtext
-                                 specialglcode                 = <ls_item>-specialglcode
-                                _currencyamount = VALUE #( ( currencyrole = '00'
-                                                            journalentryitemamount = -1 * <ls_item>-amount
-                                                            currency = <ls_item>-currency  ) ) ) TO lt_apitem.
-              ENDIF.
+
+
+              APPEND VALUE #( glaccountlineitem             = |002|
+                              glaccount                     = ls_bankpass-glaccount
+                              assignmentreference           = <ls_item>-assignmentreference
+                              reference1idbybusinesspartner = <ls_item>-reference1idbybusinesspartner
+                              reference2idbybusinesspartner = <ls_item>-reference2idbybusinesspartner
+                              reference3idbybusinesspartner = <ls_item>-reference3idbybusinesspartner
+                              documentitemtext              = <ls_item>-documentitemtext
+                              _currencyamount = VALUE #( ( currencyrole = '00'
+                                                      journalentryitemamount = <ls_item>-amount * -1
+                                                      currency = <ls_item>-currency  ) )           ) TO lt_glitem.
+
               <fs_je>-%param = VALUE #( companycode                  = <ls_item>-companycode
                                         documentreferenceid          = <ls_item>-documentreferenceid
                                         createdbyuser                = sy-uname
                                         businesstransactiontype      = 'RFBU'
-                                        accountingdocumenttype       = COND #( WHEN lt_aritem IS INITIAL THEN 'KZ' ELSE 'DZ' )
+                                        accountingdocumenttype       = 'SA'
                                         documentdate                 = <ls_item>-physical_operation_date
                                         postingdate                  = <ls_item>-physical_operation_date
                                         accountingdocumentheadertext = <ls_item>-rule_data-accountingdocumentheadertext
@@ -155,56 +148,198 @@
                                         _taxitems                    = VALUE #( FOR wa_taxitem  IN lt_taxitem  ( CORRESPONDING #( wa_taxitem  MAPPING _currencyamount = _currencyamount ) ) )
                                       ).
             ELSE.
-*virman mı diye kontrol ediliyor.
-              SELECT SINGLE * FROM yeho_t_bankpass WHERE iban = @<ls_item>-sender_iban INTO @DATA(ls_bankpass).
-              IF sy-subrc = 0. "virman kaydı.
-                lv_internal_transfer = abap_true.
-                APPEND VALUE #( glaccountlineitem             = |001|
-                                glaccount                     = <ls_item>-glaccount
-                                assignmentreference           = <ls_item>-assignmentreference
-                                reference1idbybusinesspartner = <ls_item>-reference1idbybusinesspartner
-                                reference2idbybusinesspartner = <ls_item>-reference2idbybusinesspartner
-                                reference3idbybusinesspartner = <ls_item>-reference3idbybusinesspartner
-                                documentitemtext              = <ls_item>-documentitemtext102
-                                _currencyamount = VALUE #( ( currencyrole = '00'
-                                                            journalentryitemamount = <ls_item>-amount
-                                                            currency = <ls_item>-currency  ) )          ) TO lt_glitem.
-
-
-                APPEND VALUE #( glaccountlineitem             = |002|
-                                glaccount                     = ls_bankpass-glaccount
-                                assignmentreference           = <ls_item>-assignmentreference
-                                reference1idbybusinesspartner = <ls_item>-reference1idbybusinesspartner
-                                reference2idbybusinesspartner = <ls_item>-reference2idbybusinesspartner
-                                reference3idbybusinesspartner = <ls_item>-reference3idbybusinesspartner
-                                documentitemtext              = <ls_item>-documentitemtext
-                                _currencyamount = VALUE #( ( currencyrole = '00'
-                                                        journalentryitemamount = <ls_item>-amount * -1
-                                                        currency = <ls_item>-currency  ) )           ) TO lt_glitem.
-
-                <fs_je>-%param = VALUE #( companycode                  = <ls_item>-companycode
-                                          documentreferenceid          = <ls_item>-documentreferenceid
-                                          createdbyuser                = sy-uname
-                                          businesstransactiontype      = 'RFBU'
-                                          accountingdocumenttype       = 'SA'
-                                          documentdate                 = <ls_item>-physical_operation_date
-                                          postingdate                  = <ls_item>-physical_operation_date
-                                          accountingdocumentheadertext = <ls_item>-rule_data-accountingdocumentheadertext
-                                          taxdeterminationdate         = ycl_eho_utils=>get_local_time(  )-date
-                                          _apitems                     = VALUE #( FOR wa_apitem  IN lt_apitem  ( CORRESPONDING #( wa_apitem  MAPPING _currencyamount = _currencyamount ) ) )
-                                          _aritems                     = VALUE #( FOR wa_aritem  IN lt_aritem  ( CORRESPONDING #( wa_aritem  MAPPING _currencyamount = _currencyamount ) ) )
-                                          _glitems                     = VALUE #( FOR wa_glitem  IN lt_glitem  ( CORRESPONDING #( wa_glitem  MAPPING _currencyamount = _currencyamount ) ) )
-                                          _taxitems                    = VALUE #( FOR wa_taxitem  IN lt_taxitem  ( CORRESPONDING #( wa_taxitem  MAPPING _currencyamount = _currencyamount ) ) )
-                                        ).
-
-              ELSE.
-                lo_message = cl_bali_message_setter=>create( severity = if_bali_constants=>c_severity_information
+              "virman değilse BP aranıyor.
+              DATA(lv_businesspartner) = find_bp( <ls_item> ).
+              IF lv_businesspartner IS INITIAL.
+                DATA(lo_message) = cl_bali_message_setter=>create( severity = if_bali_constants=>c_severity_information
                                                                    id = ycl_eho_utils=>mc_message_class
                                                                    number = 026
                                                                    variable_1 = CONV #( <ls_item>-sender_iban ) ).
                 mo_log->add_item( lo_message ).
+              ELSE.
+                lo_message = cl_bali_message_setter=>create( severity = if_bali_constants=>c_severity_information
+                                                                   id = ycl_eho_utils=>mc_message_class
+                                                                   number = 025
+                                                                   variable_1 = CONV #( lv_businesspartner ) ).
+                mo_log->add_item( lo_message ).
+                DATA(lv_usable) = check_bp( iv_businesspartner = lv_businesspartner ).
+                IF lv_usable IS INITIAL.
+                  APPEND VALUE #( glaccountlineitem             = |001|
+                                  glaccount                     = <ls_item>-glaccount
+                                  assignmentreference           = <ls_item>-assignmentreference
+                                  reference1idbybusinesspartner = <ls_item>-reference1idbybusinesspartner
+                                  reference2idbybusinesspartner = <ls_item>-reference2idbybusinesspartner
+                                  reference3idbybusinesspartner = <ls_item>-reference3idbybusinesspartner
+                                  documentitemtext              = <ls_item>-documentitemtext102
+                                  _currencyamount = VALUE #( ( currencyrole = '00'
+                                                              journalentryitemamount = <ls_item>-amount
+                                                              currency = <ls_item>-currency  ) )          ) TO lt_glitem.
+                  IF <ls_item>-amount > 0. "102 borç çalışıcak ise müşteridir.
+                    APPEND VALUE #( glaccountlineitem              = |002|
+                                    customer                       = lv_businesspartner
+                                     paymentmethod                 = <ls_item>-paymentmethod
+                                     paymentterms                  = <ls_item>-paymentterms
+                                     assignmentreference           = <ls_item>-assignmentreference
+                                     profitcenter                  = <ls_item>-profitcenter
+                                     reference1idbybusinesspartner = <ls_item>-reference1idbybusinesspartner
+                                     reference2idbybusinesspartner = <ls_item>-reference2idbybusinesspartner
+                                     reference3idbybusinesspartner = <ls_item>-reference3idbybusinesspartner
+                                     documentitemtext              = <ls_item>-documentitemtext
+                                     specialglcode                 = <ls_item>-specialglcode
+                                    _currencyamount = VALUE #( ( currencyrole = '00'
+                                                                journalentryitemamount = -1 * <ls_item>-amount
+                                                                currency = <ls_item>-currency  ) ) ) TO lt_aritem.
+                  ELSE.
+                    APPEND VALUE #( glaccountlineitem              = |002|
+                                    supplier                       = lv_businesspartner
+                                     paymentmethod                 = <ls_item>-paymentmethod
+                                     paymentterms                  = <ls_item>-paymentterms
+                                     assignmentreference           = <ls_item>-assignmentreference
+                                     profitcenter                  = <ls_item>-profitcenter
+                                     reference1idbybusinesspartner = <ls_item>-reference1idbybusinesspartner
+                                     reference2idbybusinesspartner = <ls_item>-reference2idbybusinesspartner
+                                     reference3idbybusinesspartner = <ls_item>-reference3idbybusinesspartner
+                                     documentitemtext              = <ls_item>-documentitemtext
+                                     specialglcode                 = <ls_item>-specialglcode
+                                    _currencyamount = VALUE #( ( currencyrole = '00'
+                                                                journalentryitemamount = -1 * <ls_item>-amount
+                                                                currency = <ls_item>-currency  ) ) ) TO lt_apitem.
+                  ENDIF.
+                  <fs_je>-%param = VALUE #( companycode                  = <ls_item>-companycode
+                                            documentreferenceid          = <ls_item>-documentreferenceid
+                                            createdbyuser                = sy-uname
+                                            businesstransactiontype      = 'RFBU'
+                                            accountingdocumenttype       = COND #( WHEN lt_aritem IS INITIAL THEN 'KZ' ELSE 'DZ' )
+                                            documentdate                 = <ls_item>-physical_operation_date
+                                            postingdate                  = <ls_item>-physical_operation_date
+                                            accountingdocumentheadertext = <ls_item>-rule_data-accountingdocumentheadertext
+                                            taxdeterminationdate         = ycl_eho_utils=>get_local_time(  )-date
+                                            _apitems                     = VALUE #( FOR wa_apitem  IN lt_apitem  ( CORRESPONDING #( wa_apitem  MAPPING _currencyamount = _currencyamount ) ) )
+                                            _aritems                     = VALUE #( FOR wa_aritem  IN lt_aritem  ( CORRESPONDING #( wa_aritem  MAPPING _currencyamount = _currencyamount ) ) )
+                                            _glitems                     = VALUE #( FOR wa_glitem  IN lt_glitem  ( CORRESPONDING #( wa_glitem  MAPPING _currencyamount = _currencyamount ) ) )
+                                            _taxitems                    = VALUE #( FOR wa_taxitem  IN lt_taxitem  ( CORRESPONDING #( wa_taxitem  MAPPING _currencyamount = _currencyamount ) ) )
+                                          ).
+                ELSE.
+                  lo_message = cl_bali_message_setter=>create( severity = if_bali_constants=>c_severity_information
+                                                                     id = ycl_eho_utils=>mc_message_class
+                                                                     number = 027 ).
+                  mo_log->add_item( lo_message ).
+                ENDIF.
               ENDIF.
             ENDIF.
+*            DATA(lv_businesspartner) = find_bp( <ls_item> ).
+*            IF lv_businesspartner IS NOT INITIAL.
+*              DATA(lo_message) = cl_bali_message_setter=>create( severity = if_bali_constants=>c_severity_information
+*                                                                 id = ycl_eho_utils=>mc_message_class
+*                                                                 number = 025
+*                                                                 variable_1 = CONV #( lv_businesspartner ) ).
+*              mo_log->add_item( lo_message ).
+*              APPEND VALUE #( glaccountlineitem             = |001|
+*                              glaccount                     = <ls_item>-glaccount
+*                              assignmentreference           = <ls_item>-assignmentreference
+*                              reference1idbybusinesspartner = <ls_item>-reference1idbybusinesspartner
+*                              reference2idbybusinesspartner = <ls_item>-reference2idbybusinesspartner
+*                              reference3idbybusinesspartner = <ls_item>-reference3idbybusinesspartner
+*                              documentitemtext              = <ls_item>-documentitemtext102
+*                              _currencyamount = VALUE #( ( currencyrole = '00'
+*                                                          journalentryitemamount = <ls_item>-amount
+*                                                          currency = <ls_item>-currency  ) )          ) TO lt_glitem.
+*              IF <ls_item>-amount > 0. "102 borç çalışıcak ise müşteridir.
+*                APPEND VALUE #( glaccountlineitem              = |002|
+*                                customer                       = lv_businesspartner
+*                                 paymentmethod                 = <ls_item>-paymentmethod
+*                                 paymentterms                  = <ls_item>-paymentterms
+*                                 assignmentreference           = <ls_item>-assignmentreference
+*                                 profitcenter                  = <ls_item>-profitcenter
+*                                 reference1idbybusinesspartner = <ls_item>-reference1idbybusinesspartner
+*                                 reference2idbybusinesspartner = <ls_item>-reference2idbybusinesspartner
+*                                 reference3idbybusinesspartner = <ls_item>-reference3idbybusinesspartner
+*                                 documentitemtext              = <ls_item>-documentitemtext
+*                                 specialglcode                 = <ls_item>-specialglcode
+*                                _currencyamount = VALUE #( ( currencyrole = '00'
+*                                                            journalentryitemamount = -1 * <ls_item>-amount
+*                                                            currency = <ls_item>-currency  ) ) ) TO lt_aritem.
+*              ELSE.
+*                APPEND VALUE #( glaccountlineitem              = |002|
+*                                supplier                       = lv_businesspartner
+*                                 paymentmethod                 = <ls_item>-paymentmethod
+*                                 paymentterms                  = <ls_item>-paymentterms
+*                                 assignmentreference           = <ls_item>-assignmentreference
+*                                 profitcenter                  = <ls_item>-profitcenter
+*                                 reference1idbybusinesspartner = <ls_item>-reference1idbybusinesspartner
+*                                 reference2idbybusinesspartner = <ls_item>-reference2idbybusinesspartner
+*                                 reference3idbybusinesspartner = <ls_item>-reference3idbybusinesspartner
+*                                 documentitemtext              = <ls_item>-documentitemtext
+*                                 specialglcode                 = <ls_item>-specialglcode
+*                                _currencyamount = VALUE #( ( currencyrole = '00'
+*                                                            journalentryitemamount = -1 * <ls_item>-amount
+*                                                            currency = <ls_item>-currency  ) ) ) TO lt_apitem.
+*              ENDIF.
+*              <fs_je>-%param = VALUE #( companycode                  = <ls_item>-companycode
+*                                        documentreferenceid          = <ls_item>-documentreferenceid
+*                                        createdbyuser                = sy-uname
+*                                        businesstransactiontype      = 'RFBU'
+*                                        accountingdocumenttype       = COND #( WHEN lt_aritem IS INITIAL THEN 'KZ' ELSE 'DZ' )
+*                                        documentdate                 = <ls_item>-physical_operation_date
+*                                        postingdate                  = <ls_item>-physical_operation_date
+*                                        accountingdocumentheadertext = <ls_item>-rule_data-accountingdocumentheadertext
+*                                        taxdeterminationdate         = ycl_eho_utils=>get_local_time(  )-date
+*                                        _apitems                     = VALUE #( FOR wa_apitem  IN lt_apitem  ( CORRESPONDING #( wa_apitem  MAPPING _currencyamount = _currencyamount ) ) )
+*                                        _aritems                     = VALUE #( FOR wa_aritem  IN lt_aritem  ( CORRESPONDING #( wa_aritem  MAPPING _currencyamount = _currencyamount ) ) )
+*                                        _glitems                     = VALUE #( FOR wa_glitem  IN lt_glitem  ( CORRESPONDING #( wa_glitem  MAPPING _currencyamount = _currencyamount ) ) )
+*                                        _taxitems                    = VALUE #( FOR wa_taxitem  IN lt_taxitem  ( CORRESPONDING #( wa_taxitem  MAPPING _currencyamount = _currencyamount ) ) )
+*                                      ).
+*            ELSE.
+**virman mı diye kontrol ediliyor.
+*              SELECT SINGLE * FROM yeho_t_bankpass WHERE iban = @<ls_item>-sender_iban INTO @DATA(ls_bankpass).
+*              IF sy-subrc = 0. "virman kaydı.
+*                lv_internal_transfer = abap_true.
+*                APPEND VALUE #( glaccountlineitem             = |001|
+*                                glaccount                     = <ls_item>-glaccount
+*                                assignmentreference           = <ls_item>-assignmentreference
+*                                reference1idbybusinesspartner = <ls_item>-reference1idbybusinesspartner
+*                                reference2idbybusinesspartner = <ls_item>-reference2idbybusinesspartner
+*                                reference3idbybusinesspartner = <ls_item>-reference3idbybusinesspartner
+*                                documentitemtext              = <ls_item>-documentitemtext102
+*                                _currencyamount = VALUE #( ( currencyrole = '00'
+*                                                            journalentryitemamount = <ls_item>-amount
+*                                                            currency = <ls_item>-currency  ) )          ) TO lt_glitem.
+*
+*
+*                APPEND VALUE #( glaccountlineitem             = |002|
+*                                glaccount                     = ls_bankpass-glaccount
+*                                assignmentreference           = <ls_item>-assignmentreference
+*                                reference1idbybusinesspartner = <ls_item>-reference1idbybusinesspartner
+*                                reference2idbybusinesspartner = <ls_item>-reference2idbybusinesspartner
+*                                reference3idbybusinesspartner = <ls_item>-reference3idbybusinesspartner
+*                                documentitemtext              = <ls_item>-documentitemtext
+*                                _currencyamount = VALUE #( ( currencyrole = '00'
+*                                                        journalentryitemamount = <ls_item>-amount * -1
+*                                                        currency = <ls_item>-currency  ) )           ) TO lt_glitem.
+*
+*                <fs_je>-%param = VALUE #( companycode                  = <ls_item>-companycode
+*                                          documentreferenceid          = <ls_item>-documentreferenceid
+*                                          createdbyuser                = sy-uname
+*                                          businesstransactiontype      = 'RFBU'
+*                                          accountingdocumenttype       = 'SA'
+*                                          documentdate                 = <ls_item>-physical_operation_date
+*                                          postingdate                  = <ls_item>-physical_operation_date
+*                                          accountingdocumentheadertext = <ls_item>-rule_data-accountingdocumentheadertext
+*                                          taxdeterminationdate         = ycl_eho_utils=>get_local_time(  )-date
+*                                          _apitems                     = VALUE #( FOR wa_apitem  IN lt_apitem  ( CORRESPONDING #( wa_apitem  MAPPING _currencyamount = _currencyamount ) ) )
+*                                          _aritems                     = VALUE #( FOR wa_aritem  IN lt_aritem  ( CORRESPONDING #( wa_aritem  MAPPING _currencyamount = _currencyamount ) ) )
+*                                          _glitems                     = VALUE #( FOR wa_glitem  IN lt_glitem  ( CORRESPONDING #( wa_glitem  MAPPING _currencyamount = _currencyamount ) ) )
+*                                          _taxitems                    = VALUE #( FOR wa_taxitem  IN lt_taxitem  ( CORRESPONDING #( wa_taxitem  MAPPING _currencyamount = _currencyamount ) ) )
+*                                        ).
+*
+*              ELSE.
+*                lo_message = cl_bali_message_setter=>create( severity = if_bali_constants=>c_severity_information
+*                                                                   id = ycl_eho_utils=>mc_message_class
+*                                                                   number = 026
+*                                                                   variable_1 = CONV #( <ls_item>-sender_iban ) ).
+*                mo_log->add_item( lo_message ).
+*              ENDIF.
+*            ENDIF.
           ELSE.
             IF <ls_item>-rule_data-taxcode IS NOT INITIAL.
               get_tax_ratio(
@@ -423,7 +558,7 @@
           CLEAR : lt_je, lt_glitem , lt_apitem , lt_aritem , ls_failed ,
                   ls_reported , ls_commit_failed , ls_commit_reported , lv_internal_transfer,
                   lv_usd_rate , lv_usd , lv_eur_rate , lv_eur,
-                  lv_businesspartner.
+                  lv_businesspartner , ls_bankpass, lv_usable.
         CATCH cx_uuid_error INTO DATA(lx_error).
         CATCH cx_bali_runtime INTO DATA(lx_bali_runtime).
           lo_free = cl_bali_free_text_setter=>create( severity = if_bali_constants=>c_severity_warning

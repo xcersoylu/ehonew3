@@ -18,3 +18,5 @@
                           RETURNING VALUE(rv_ratio) TYPE yeho_e_tax_ratio.
     METHODS find_bp IMPORTING is_item                   TYPE yeho_s_bank_automatic_items
                     RETURNING VALUE(rv_businesspartner) TYPE i_businesspartner-businesspartner.
+    METHODS check_bp IMPORTING iv_businesspartner TYPE i_businesspartner-businesspartner
+                     RETURNING VALUE(rv_usable)   TYPE abap_boolean.
