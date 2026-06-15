@@ -20,6 +20,21 @@
     IF sy-subrc = 0.
       COMMIT WORK AND WAIT.
     ENDIF.
+    CLEAR  : mv_usd , mv_eur.
+    mv_usd = ycl_eho_utils=>get_exchange_rate(
+      EXPORTING
+        iv_exchangeratetype = is_item-arbitrage-arbitrage_exchange_type
+        iv_sourcecurrency   = 'USD'
+        iv_targetcurrency   = 'TRY'
+        iv_exchangeratedate = is_item-physical_operation_date
+    ).
+    mv_eur = ycl_eho_utils=>get_exchange_rate(
+      EXPORTING
+        iv_exchangeratetype = is_item-arbitrage-arbitrage_exchange_type
+        iv_sourcecurrency   = 'EUR'
+        iv_targetcurrency   = 'TRY'
+        iv_exchangeratedate = is_item-physical_operation_date
+    ).
     DATA(ls_fi_doc1) = create_arbitrage_doc1( is_item = is_item ).
     IF ls_fi_doc1-accountingdocument IS NOT INITIAL.
       DATA(ls_fi_doc2) = create_arbitrage_doc2( is_item = is_item ).

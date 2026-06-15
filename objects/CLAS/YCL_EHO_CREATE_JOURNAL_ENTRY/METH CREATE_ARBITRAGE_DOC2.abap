@@ -69,7 +69,13 @@
     DATA lt_apitem         TYPE TABLE OF ty_apitems.
     DATA lt_aritem         TYPE TABLE OF ty_aritems.
     DATA lt_taxitem        TYPE TABLE OF ty_taxitems.
-
+    DATA lv_amount_usd TYPE yeho_e_wrbtr.
+    DATA lv_amount_eur TYPE yeho_e_wrbtr.
+    IF is_item-currency = 'USD'.
+      lv_amount_eur = ( mv_usd / mv_eur ) * is_item-amount.
+    ELSEIF is_item-currency = 'EUR'.
+      lv_amount_usd = ( mv_eur / mv_usd ) * is_item-amount.
+    ENDIF.
     APPEND INITIAL LINE TO lt_je ASSIGNING FIELD-SYMBOL(<fs_je>).
     TRY.
         <fs_je>-%cid = to_upper( cl_uuid_factory=>create_system_uuid( )->create_uuid_x16( ) ).
@@ -87,7 +93,15 @@
                                                                              WHEN is_item-currency = 'EUR' THEN ms_companycode_parameter-currency_type_eur
                                                                              ELSE '10' )
                                                       journalentryitemamount = is_item-amount
-                                                      currency = is_item-currency  ) ) "ilk belgenin para birimine göre olan ekleniyor.
+                                                      currency = is_item-currency  )  "ilk belgenin para birimine göre olan ekleniyor.
+                                                    ( currencyrole = COND #( WHEN is_item-currency = 'USD' THEN ms_companycode_parameter-currency_type_eur
+                                                                             WHEN is_item-currency = 'EUR' THEN ms_companycode_parameter-currency_type_usd )
+                                                      journalentryitemamount = COND #( WHEN is_item-currency = 'USD' THEN lv_amount_eur
+                                                                                       WHEN is_item-currency = 'EUR' THEN lv_amount_usd  )
+                                                      currency = COND #( WHEN is_item-currency = 'USD' THEN 'EUR'
+                                                                         WHEN is_item-currency = 'EUR' THEN 'USD'  )
+                                                    )
+                                               )
                                          ) TO lt_glitem.
 
         IF is_item-supplier IS NOT INITIAL.
@@ -111,7 +125,17 @@
                                                                              WHEN is_item-currency = 'EUR' THEN ms_companycode_parameter-currency_type_eur
                                                                              ELSE '10' )
                                                       journalentryitemamount = is_item-amount * -1
-                                                      currency = is_item-currency  ) ) "ilk belgenin para birimine göre olan ekleniyor.
+                                                      currency = is_item-currency  ) "ilk belgenin para birimine göre olan ekleniyor.
+
+                                                    ( currencyrole = COND #( WHEN is_item-currency = 'USD' THEN ms_companycode_parameter-currency_type_eur
+                                                                             WHEN is_item-currency = 'EUR' THEN ms_companycode_parameter-currency_type_usd )
+                                                      journalentryitemamount = COND #( WHEN is_item-currency = 'USD' THEN lv_amount_eur * -1
+                                                                                       WHEN is_item-currency = 'EUR' THEN lv_amount_usd * -1 )
+                                                      currency = COND #( WHEN is_item-currency = 'USD' THEN 'EUR'
+                                                                         WHEN is_item-currency = 'EUR' THEN 'USD'  )
+                                                    )
+
+                                                    )
                                                     ) TO lt_apitem.
         ELSEIF is_item-customer IS NOT INITIAL.
           APPEND VALUE #( glaccountlineitem              = |002|
@@ -134,7 +158,15 @@
                                                                              WHEN is_item-currency = 'EUR' THEN ms_companycode_parameter-currency_type_eur
                                                                              ELSE '10' )
                                                       journalentryitemamount = is_item-amount * -1
-                                                      currency = is_item-currency  ) ) "ilk belgenin para birimine göre olan ekleniyor.
+                                                      currency = is_item-currency  )  "ilk belgenin para birimine göre olan ekleniyor.
+                                                    ( currencyrole = COND #( WHEN is_item-currency = 'USD' THEN ms_companycode_parameter-currency_type_eur
+                                                                             WHEN is_item-currency = 'EUR' THEN ms_companycode_parameter-currency_type_usd )
+                                                      journalentryitemamount = COND #( WHEN is_item-currency = 'USD' THEN lv_amount_eur * -1
+                                                                                       WHEN is_item-currency = 'EUR' THEN lv_amount_usd * -1 )
+                                                      currency = COND #( WHEN is_item-currency = 'USD' THEN 'EUR'
+                                                                         WHEN is_item-currency = 'EUR' THEN 'USD'  )
+
+                                                   ) )
                                                     ) TO lt_aritem.
         ELSEIF is_item-operationalglaccount IS NOT INITIAL.
           APPEND VALUE #( glaccountlineitem             = |002|
@@ -156,8 +188,16 @@
                                                                              WHEN is_item-currency = 'EUR' THEN ms_companycode_parameter-currency_type_eur
                                                                              ELSE '10' )
                                                       journalentryitemamount = is_item-amount * -1
-                                                      currency = is_item-currency  ) ) "ilk belgenin para birimine göre olan ekleniyor.
-                                                    ) TO lt_glitem.
+                                                      currency = is_item-currency  )  "ilk belgenin para birimine göre olan ekleniyor.
+                                                    ( currencyrole = COND #( WHEN is_item-currency = 'USD' THEN ms_companycode_parameter-currency_type_eur
+                                                                             WHEN is_item-currency = 'EUR' THEN ms_companycode_parameter-currency_type_usd )
+                                                      journalentryitemamount = COND #( WHEN is_item-currency = 'USD' THEN lv_amount_eur * -1
+                                                                                       WHEN is_item-currency = 'EUR' THEN lv_amount_usd * -1 )
+                                                      currency = COND #( WHEN is_item-currency = 'USD' THEN 'EUR'
+                                                                         WHEN is_item-currency = 'EUR' THEN 'USD'  )
+
+                                                    )
+                                                    ) ) TO lt_glitem.
         ENDIF.
         <fs_je>-%param = VALUE #( companycode                  = is_item-companycode
                                   documentreferenceid          = is_item-documentreferenceid

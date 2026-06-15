@@ -13,7 +13,9 @@
     METHODS create_arbitrage_doc2 IMPORTING is_item TYPE yeho_s_create_journal_items RETURNING VALUE(rs_fi_doc) TYPE ty_fi_doc.
     DATA: ms_request               TYPE yeho_s_create_journal_req,
           ms_response              TYPE yeho_s_create_journal_res,
-          ms_companycode_parameter TYPE yeho_t_company.
+          ms_companycode_parameter TYPE yeho_t_company,
+          mv_usd                   TYPE yeho_e_kursf,
+          mv_eur                   TYPE yeho_e_kursf.
     CONSTANTS: mc_header_content TYPE string VALUE 'content-type',
                mc_content_type   TYPE string VALUE 'text/json',
                mc_error          TYPE messagetyp VALUE 'E'.

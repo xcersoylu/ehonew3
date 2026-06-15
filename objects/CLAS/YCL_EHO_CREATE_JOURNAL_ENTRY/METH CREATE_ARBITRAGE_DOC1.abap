@@ -24,6 +24,13 @@
             END OF ty_glitem.
     DATA lt_je             TYPE TABLE FOR ACTION IMPORT i_journalentrytp~post.
     DATA lt_glitem         TYPE TABLE OF ty_glitem.
+    DATA lv_amount_usd TYPE yeho_e_wrbtr.
+    DATA lv_amount_eur TYPE yeho_e_wrbtr.
+    IF is_item-currency = 'USD'.
+      lv_amount_eur = ( mv_usd / mv_eur ) * is_item-amount.
+    ELSEIF is_item-currency = 'EUR'.
+      lv_amount_usd = ( mv_eur / mv_usd ) * is_item-amount.
+    ENDIF.
     APPEND INITIAL LINE TO lt_je ASSIGNING FIELD-SYMBOL(<fs_je>).
     TRY.
         <fs_je>-%cid = to_upper( cl_uuid_factory=>create_system_uuid( )->create_uuid_x16( ) ).
@@ -34,14 +41,34 @@
                         reference2idbybusinesspartner = is_item-reference2idbybusinesspartner
                         reference3idbybusinesspartner = is_item-reference3idbybusinesspartner
                         documentitemtext              = is_item-documentitemtext102
+*                        _currencyamount = VALUE #( ( currencyrole = '00'
+*                                                    journalentryitemamount = is_item-amount
+*                                                    currency = is_item-currency  )
+*                                                    ( currencyrole = COND #( WHEN is_item-arbitrage-arbitrage_currency = 'USD' THEN ms_companycode_parameter-currency_type_usd
+*                                                                             WHEN is_item-arbitrage-arbitrage_currency = 'EUR' THEN ms_companycode_parameter-currency_type_eur
+*                                                                             ELSE '10' )
+*                                                      journalentryitemamount = is_item-arbitrage-arbitrage_amount
+*                                                      currency = is_item-arbitrage-arbitrage_currency  ) ) "arbitraj para birimine göre olan satır ekleniyor.
                         _currencyamount = VALUE #( ( currencyrole = '00'
                                                     journalentryitemamount = is_item-amount
-                                                    currency = is_item-currency  )
+                                                    currency = is_item-currency
+                                                   )
                                                     ( currencyrole = COND #( WHEN is_item-arbitrage-arbitrage_currency = 'USD' THEN ms_companycode_parameter-currency_type_usd
                                                                              WHEN is_item-arbitrage-arbitrage_currency = 'EUR' THEN ms_companycode_parameter-currency_type_eur
                                                                              ELSE '10' )
                                                       journalentryitemamount = is_item-arbitrage-arbitrage_amount
-                                                      currency = is_item-arbitrage-arbitrage_currency  ) ) "arbitraj para birimine göre olan satır ekleniyor.
+                                                      currency = is_item-arbitrage-arbitrage_currency
+                                                    ) "arbitraj para birimine göre olan satır ekleniyor.
+
+                                                    ( currencyrole = COND #( WHEN is_item-currency = 'USD' THEN ms_companycode_parameter-currency_type_eur
+                                                                             WHEN is_item-currency = 'EUR' THEN ms_companycode_parameter-currency_type_usd
+                                                                             ELSE '10' )
+                                                      journalentryitemamount = COND #( WHEN is_item-currency = 'USD' THEN lv_amount_eur
+                                                                                       WHEN is_item-currency = 'EUR' THEN lv_amount_usd  )
+                                                      currency = COND #( WHEN is_item-currency = 'USD' THEN 'EUR'
+                                                                         WHEN is_item-currency = 'EUR' THEN 'USD'  )
+                                                    )
+                                                    )
                                          ) TO lt_glitem.
 
         APPEND VALUE #( glaccountlineitem             = |002|
@@ -58,7 +85,16 @@
                                                                              WHEN is_item-arbitrage-arbitrage_currency = 'EUR' THEN ms_companycode_parameter-currency_type_eur
                                                                              ELSE '10' )
                                                       journalentryitemamount = is_item-arbitrage-arbitrage_amount * -1
-                                                      currency = is_item-arbitrage-arbitrage_currency  ) ) "arbitraj para birimine göre olan satır ekleniyor.
+                                                      currency = is_item-arbitrage-arbitrage_currency  )  "arbitraj para birimine göre olan satır ekleniyor.
+                                                    ( currencyrole = COND #( WHEN is_item-currency = 'USD' THEN ms_companycode_parameter-currency_type_eur
+                                                                             WHEN is_item-currency = 'EUR' THEN ms_companycode_parameter-currency_type_usd
+                                                                             ELSE '10' )
+                                                      journalentryitemamount = COND #( WHEN is_item-currency = 'USD' THEN lv_amount_eur * -1
+                                                                                       WHEN is_item-currency = 'EUR' THEN lv_amount_usd * -1 )
+                                                      currency = COND #( WHEN is_item-currency = 'USD' THEN 'EUR'
+                                                                         WHEN is_item-currency = 'EUR' THEN 'USD'  )
+                                                    )
+                                                    )
                                             ) TO lt_glitem.
 
         <fs_je>-%param = VALUE #( companycode                  = is_item-companycode
