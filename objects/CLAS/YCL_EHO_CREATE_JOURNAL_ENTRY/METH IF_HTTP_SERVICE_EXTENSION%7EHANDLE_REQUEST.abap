@@ -108,16 +108,28 @@
                 rv_ratio       = lv_tax_ratio
             ).
             IF <ls_item>-amount > 0.
-              <ls_item>-amount  *= -1.
+              lv_taxamount = <ls_item>-amount - ( <ls_item>-amount / ( 1 + ( lv_tax_ratio / 100 ) ) ).
+              lv_taxbaseamount = <ls_item>-amount - lv_taxamount.
+              lv_taxamount *= -1.
+              lv_taxbaseamount *= -1.
+            ELSE.
+              lv_taxamount = <ls_item>-amount - ( <ls_item>-amount / ( 1 + ( lv_tax_ratio / 100 ) ) ).
+              lv_taxamount = abs( lv_taxamount ).
+              lv_taxbaseamount = <ls_item>-amount + lv_taxamount.
+              lv_taxbaseamount = abs( lv_taxbaseamount ).
             ENDIF.
-            lv_taxamount = <ls_item>-amount - ( <ls_item>-amount / ( 1 + ( lv_tax_ratio / 100 ) ) ).
-*her zaman ekrandaki - olan satırlar için vergi göstergesi girilebilecekmiş o yüzden vergi göstergesi - bulunuyor bu yüzden mutlak değeri alınıyor.
-*örneğin 102 li hesaba -100
-* 760 lı hesaba 83,33
-* 191 li kdv hesaba 16,67 atılıyor.
-            lv_taxamount = abs( lv_taxamount ).
-            lv_taxbaseamount = <ls_item>-amount + lv_taxamount.
-            lv_taxbaseamount = abs( lv_taxbaseamount ).
+
+*            IF <ls_item>-amount > 0.
+*              <ls_item>-amount  *= -1.
+*            ENDIF.
+*            lv_taxamount = <ls_item>-amount - ( <ls_item>-amount / ( 1 + ( lv_tax_ratio / 100 ) ) ).
+**her zaman ekrandaki - olan satırlar için vergi göstergesi girilebilecekmiş o yüzden vergi göstergesi - bulunuyor bu yüzden mutlak değeri alınıyor.
+**örneğin 102 li hesaba -100
+** 760 lı hesaba 83,33
+** 191 li kdv hesaba 16,67 atılıyor.
+*            lv_taxamount = abs( lv_taxamount ).
+*            lv_taxbaseamount = <ls_item>-amount + lv_taxamount.
+*            lv_taxbaseamount = abs( lv_taxbaseamount ).
             APPEND VALUE #( glaccountlineitem     = |003|
                             taxcode               = <ls_item>-taxcode
                             taxitemclassification = 'VST'
