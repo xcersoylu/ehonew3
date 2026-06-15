@@ -80,6 +80,7 @@
     CLEAR ms_companycode_parameters.
     SELECT SINGLE * FROM yeho_t_company WHERE companycode = @lv_companycode INTO @ms_companycode_parameters.
     LOOP AT mt_automatic_items ASSIGNING FIELD-SYMBOL(<ls_item>).
+      CLEAR lt_je.
       IF ms_companycode_parameters-automatic_item_text IS NOT INITIAL.
         IF <ls_item>-rule_data-documentitemtext_1 IS INITIAL.
           <ls_item>-rule_data-documentitemtext_1 = <ls_item>-description.
@@ -91,7 +92,10 @@
       APPEND INITIAL LINE TO lt_je ASSIGNING FIELD-SYMBOL(<fs_je>).
       TRY.
           <fs_je>-%cid = to_upper( cl_uuid_factory=>create_system_uuid( )->create_uuid_x16( ) ).
-          IF <ls_item>-rule_no IS INITIAL.
+          IF <ls_item>-rule_no IS INITIAL. "kural tanımlı değilse vergi numarası dolu olan şirlet kodlarında otomatik kayıt çalışacak.
+            IF ms_companycode_parameters-tax_number IS INITIAL.
+              CONTINUE.
+            ENDIF.
             SELECT SINGLE * FROM yeho_t_bankpass WHERE iban = @<ls_item>-sender_iban INTO @DATA(ls_bankpass).
             IF sy-subrc = 0. "virman
               lv_internal_transfer = abap_true.
@@ -349,17 +353,28 @@
                 RECEIVING
                   rv_ratio       = lv_tax_ratio
               ).
-              IF <ls_item>-amount > 0.
-                <ls_item>-amount  *= -1.
-              ENDIF.
+            IF <ls_item>-amount > 0.
               lv_taxamount = <ls_item>-amount - ( <ls_item>-amount / ( 1 + ( lv_tax_ratio / 100 ) ) ).
-*her zaman ekrandaki - olan satırlar için vergi göstergesi girilebilecekmiş o yüzden vergi göstergesi - bulunuyor bu yüzden mutlak değeri alınıyor.
-*örneğin 102 li hesaba -100
-* 760 lı hesaba 83,33
-* 191 li kdv hesaba 16,67 atılıyor.
+              lv_taxbaseamount = <ls_item>-amount - lv_taxamount.
+              lv_taxamount *= -1.
+              lv_taxbaseamount *= -1.
+            ELSE.
+              lv_taxamount = <ls_item>-amount - ( <ls_item>-amount / ( 1 + ( lv_tax_ratio / 100 ) ) ).
               lv_taxamount = abs( lv_taxamount ).
               lv_taxbaseamount = <ls_item>-amount + lv_taxamount.
               lv_taxbaseamount = abs( lv_taxbaseamount ).
+            ENDIF.
+*              IF <ls_item>-amount > 0.
+*                <ls_item>-amount  *= -1.
+*              ENDIF.
+*              lv_taxamount = <ls_item>-amount - ( <ls_item>-amount / ( 1 + ( lv_tax_ratio / 100 ) ) ).
+**her zaman ekrandaki - olan satırlar için vergi göstergesi girilebilecekmiş o yüzden vergi göstergesi - bulunuyor bu yüzden mutlak değeri alınıyor.
+**örneğin 102 li hesaba -100
+** 760 lı hesaba 83,33
+** 191 li kdv hesaba 16,67 atılıyor.
+*              lv_taxamount = abs( lv_taxamount ).
+*              lv_taxbaseamount = <ls_item>-amount + lv_taxamount.
+*              lv_taxbaseamount = abs( lv_taxbaseamount ).
               APPEND VALUE #( glaccountlineitem     = |003|
                               taxcode               = <ls_item>-rule_data-taxcode
                               taxitemclassification = 'VST'
