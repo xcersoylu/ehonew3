@@ -167,7 +167,7 @@
                                                                    variable_1 = CONV #( lv_businesspartner ) ).
                 mo_log->add_item( lo_message ).
                 DATA(lv_usable) = check_bp( iv_businesspartner = lv_businesspartner ).
-                IF lv_usable IS INITIAL.
+                IF lv_usable IS NOT INITIAL.
                   APPEND VALUE #( glaccountlineitem             = |001|
                                   glaccount                     = <ls_item>-glaccount
                                   assignmentreference           = <ls_item>-assignmentreference
