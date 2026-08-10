@@ -87,7 +87,16 @@
     DATA(lv_companycode) = VALUE #( ms_request-items[ 1 ]-companycode OPTIONAL ).
     SELECT SINGLE * FROM yeho_t_company WHERE companycode = @lv_companycode INTO @ms_companycode_parameter.
     LOOP AT ms_request-items ASSIGNING FIELD-SYMBOL(<ls_item>).
-      IF <ls_item>-arbitrage IS NOT INITIAL.
+      IF <ls_item>-alt_recon_account IS NOT INITIAL. " alternatif mutabakat hesabı kaydı.
+        create_fi_doc_via_api(
+        EXPORTING
+          is_item           = <ls_item>
+        CHANGING
+          ct_saved_receipts = lt_saved_receipts
+      ).
+        CONTINUE.
+      ENDIF.
+      IF <ls_item>-arbitrage IS NOT INITIAL." arbitraj kaydı
         create_arbitrage_docs(
           EXPORTING
             is_item           = <ls_item>
@@ -96,7 +105,7 @@
         ).
         CONTINUE.
       ENDIF.
-      APPEND INITIAL LINE TO lt_je ASSIGNING FIELD-SYMBOL(<fs_je>).
+      APPEND INITIAL LINE TO lt_je ASSIGNING FIELD-SYMBOL(<fs_je>). " normal kayıtlar
       TRY.
           <fs_je>-%cid = to_upper( cl_uuid_factory=>create_system_uuid( )->create_uuid_x16( ) ).
           IF <ls_item>-taxcode IS NOT INITIAL.

@@ -12,7 +12,7 @@
     "SOURCE":"@AbapCatalog.viewEnhancementCategory: [#NONE]\r\n@AccessControl.authorizationCheck: #NOT_REQUIRED\r\n@EndUserText.label: 'Banka Açılış-Kapanış Bakiyesi'\r\n@Metadata.ignorePropagatedAnnotations: true\r\ndefine view entity YEHO_DDL_I_BANK_BALANCE\r\n  as select from yeho_t_offlinebd\r\n{\r\n  key companycode             as Companycode,\r\n  key glaccount               as Glaccount,\r\n  key valid_from              as ValidFrom,\r\n      account_no              as AccountNo,\r\n      branch_no               as BranchNo,\r\n      branch_name_description as BranchNameDescription,\r\n      currency                as Currency,\r\n      @Semantics.amount.currencyCode: 'Currency'\r\n      opening_balance         as OpeningBalance,\r\n      @Semantics.amount.currencyCode: 'Currency'\r\n      closing_balance         as ClosingBalance,\r\n      bank_id                 as BankId,\r\n      account_id              as AccountId,\r\n      bank_code               as BankCode\r\n}\r\n/*+[internal] {\n\"BASEINFO\":\n{\n\"FROM\":\n[\n\"YEHO_T_OFFLINEBD\"\n],\n\"ASSOCIATED\":\n[],\n\"BASE\":\n[],\n\"ANNO_REF\":\n[],\n\"SCALAR_FUNCTION\":\n[],\n\"VERSION\":0,\n\"ANNOREF_EVALUATION_ERROR\":\"\"\n}\n}*/",
     "PARENTNAME":"",
     "ACTFLAG":"",
-    "CHGFLAG":"",
+    "CHGFLAG":"J,4T2",
     "SOURCE_TYPE":"W",
     "SOURCE_ORIGIN":"0",
     "ABAP_LANGUAGE_VERSION":"5"

@@ -68,17 +68,17 @@
 
                                                     ( currencyrole = COND #( WHEN is_item-currency = 'USD' THEN ms_companycode_parameter-currency_type_eur
                                                                              WHEN is_item-currency = 'EUR' THEN ms_companycode_parameter-currency_type_usd
-                                                                             when is_item-currency = 'TRY' then cond #( when is_item-arbitrage-arbitrage_currency = 'USD' then ms_companycode_parameter-currency_type_eur
-                                                                                                                        when is_item-arbitrage-arbitrage_currency = 'EUR' then ms_companycode_parameter-currency_type_usd ) )
+                                                                             WHEN is_item-currency = 'TRY' THEN COND #( WHEN is_item-arbitrage-arbitrage_currency = 'USD' THEN ms_companycode_parameter-currency_type_eur
+                                                                                                                        WHEN is_item-arbitrage-arbitrage_currency = 'EUR' THEN ms_companycode_parameter-currency_type_usd ) )
                                                       journalentryitemamount = COND #( WHEN is_item-currency = 'USD' THEN lv_amount_eur
                                                                                        WHEN is_item-currency = 'EUR' THEN lv_amount_usd
-                                                                                       when is_item-currency = 'TRY' then cond #( when is_item-arbitrage-arbitrage_currency = 'USD' then lv_amount_eur
-                                                                                                                                  when is_item-arbitrage-arbitrage_currency = 'EUR' then lv_amount_usd )
+                                                                                       WHEN is_item-currency = 'TRY' THEN COND #( WHEN is_item-arbitrage-arbitrage_currency = 'USD' THEN lv_amount_eur
+                                                                                                                                  WHEN is_item-arbitrage-arbitrage_currency = 'EUR' THEN lv_amount_usd )
                                                                                        )
                                                       currency = COND #( WHEN is_item-currency = 'USD' THEN 'EUR'
                                                                          WHEN is_item-currency = 'EUR' THEN 'USD'
-                                                                         when is_item-currency = 'TRY' then cond #( when is_item-arbitrage-arbitrage_currency = 'USD' then 'EUR'
-                                                                                                                        when is_item-arbitrage-arbitrage_currency = 'EUR' then 'USD' )  )
+                                                                         WHEN is_item-currency = 'TRY' THEN COND #( WHEN is_item-arbitrage-arbitrage_currency = 'USD' THEN 'EUR'
+                                                                                                                        WHEN is_item-arbitrage-arbitrage_currency = 'EUR' THEN 'USD' )  )
                                                     )
                                                     )
                                          ) TO lt_glitem.
@@ -100,17 +100,17 @@
                                                       currency = is_item-arbitrage-arbitrage_currency  )  "arbitraj para birimine göre olan satır ekleniyor.
                                                     ( currencyrole = COND #( WHEN is_item-currency = 'USD' THEN ms_companycode_parameter-currency_type_eur
                                                                              WHEN is_item-currency = 'EUR' THEN ms_companycode_parameter-currency_type_usd
-                                                                             when is_item-currency = 'TRY' then cond #( when is_item-arbitrage-arbitrage_currency = 'USD' then ms_companycode_parameter-currency_type_eur
-                                                                                                                        when is_item-arbitrage-arbitrage_currency = 'EUR' then ms_companycode_parameter-currency_type_usd ) )
+                                                                             WHEN is_item-currency = 'TRY' THEN COND #( WHEN is_item-arbitrage-arbitrage_currency = 'USD' THEN ms_companycode_parameter-currency_type_eur
+                                                                                                                        WHEN is_item-arbitrage-arbitrage_currency = 'EUR' THEN ms_companycode_parameter-currency_type_usd ) )
                                                       journalentryitemamount = COND #( WHEN is_item-currency = 'USD' THEN lv_amount_eur * -1
                                                                                        WHEN is_item-currency = 'EUR' THEN lv_amount_usd * -1
-                                                                                       when is_item-currency = 'TRY' then cond #( when is_item-arbitrage-arbitrage_currency = 'USD' then lv_amount_eur * -1
-                                                                                                                                  when is_item-arbitrage-arbitrage_currency = 'EUR' then lv_amount_usd * -1 )
+                                                                                       WHEN is_item-currency = 'TRY' THEN COND #( WHEN is_item-arbitrage-arbitrage_currency = 'USD' THEN lv_amount_eur * -1
+                                                                                                                                  WHEN is_item-arbitrage-arbitrage_currency = 'EUR' THEN lv_amount_usd * -1 )
                                                                                        )
                                                       currency = COND #( WHEN is_item-currency = 'USD' THEN 'EUR'
                                                                          WHEN is_item-currency = 'EUR' THEN 'USD'
-                                                                         when is_item-currency = 'TRY' then cond #( when is_item-arbitrage-arbitrage_currency = 'USD' then 'EUR'
-                                                                                                                        when is_item-arbitrage-arbitrage_currency = 'EUR' then 'USD' )  )
+                                                                         WHEN is_item-currency = 'TRY' THEN COND #( WHEN is_item-arbitrage-arbitrage_currency = 'USD' THEN 'EUR'
+                                                                                                                        WHEN is_item-arbitrage-arbitrage_currency = 'EUR' THEN 'USD' )  )
                                                     )
                                                     )
                                             ) TO lt_glitem.

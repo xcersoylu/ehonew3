@@ -5,7 +5,8 @@
   [
    {
     "OBJECT":"YEHO_APP_LOG",
-    "ABAP_LANGUAGE_VERSION":"5"
+    "ABAP_LANGUAGE_VERSION":"5",
+    "DEFAULT_DB_VERSION":""
    }
   ]
  },
@@ -31,11 +32,13 @@
   [
    {
     "OBJECT":"YEHO_APP_LOG",
-    "SUBOBJECT":"YEHO_AUTOMATIC"
+    "SUBOBJECT":"YEHO_AUTOMATIC",
+    "DEFAULT_DB_VERSION":""
    },
    {
     "OBJECT":"YEHO_APP_LOG",
-    "SUBOBJECT":"YEHO_BANK_API"
+    "SUBOBJECT":"YEHO_BANK_API",
+    "DEFAULT_DB_VERSION":""
    }
   ]
  },

@@ -71,7 +71,7 @@
       IF ls_hareketdetay-borcalacak EQ 'B'.
         ls_offline_data-debtor_vkn   = ls_hareketdetay-tcknvkn.
       ELSEIF ls_offline_data-debit_credit EQ 'A'.
-        ls_offline_data-debtor_vkn = ls_hareketdetay-tcknvkn.
+        ls_offline_data-payee_vkn = ls_hareketdetay-tcknvkn.
       ENDIF.
 
       ls_offline_data-transaction_type       = ls_hareketdetay-islemtipi.

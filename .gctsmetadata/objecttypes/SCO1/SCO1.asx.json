@@ -50,6 +50,17 @@
    {
     "OBJECTNAME":"SCO1",
     "OBJECTTYPE":"L",
+    "TABNAME":"APS_COM_W_CSCNIA",
+    "COVER":"",
+    "CANDIDATE":"",
+    "DDIC":"X",
+    "PRIM_TABLE":"",
+    "VIEWGRANT":"",
+    "TAB_FILLED":""
+   },
+   {
+    "OBJECTNAME":"SCO1",
+    "OBJECTTYPE":"L",
     "TABNAME":"APS_COM_W_CSCNIB",
     "COVER":"",
     "CANDIDATE":"",
@@ -279,6 +290,18 @@
     "TPGMID":"R3TR",
     "TOBJECT":"TABU",
     "TOBJ_NAME":"APS_COM_W_CSCNIP",
+    "TOBJKEY":"/&/*",
+    "MASKNLEN":16,
+    "MASKKLEN":2,
+    "PRIM_TABLE":""
+   },
+   {
+    "OBJECTNAME":"SCO1",
+    "OBJECTTYPE":"L",
+    "TRWCOUNT":17,
+    "TPGMID":"R3TR",
+    "TOBJECT":"TABU",
+    "TOBJ_NAME":"APS_COM_W_CSCNIA",
     "TOBJKEY":"/&/*",
     "MASKNLEN":16,
     "MASKKLEN":2,

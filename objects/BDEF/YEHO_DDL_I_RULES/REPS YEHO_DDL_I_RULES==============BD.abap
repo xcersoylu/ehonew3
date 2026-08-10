@@ -48,5 +48,6 @@ authorization master ( instance )
       Taxcode                       = taxcode;
       Businessplace                 = businessplace;
       ExchangeRateType              = exchange_rate_type;
+      AlternativeReconAccount       = alt_recon_account;
     }
 }

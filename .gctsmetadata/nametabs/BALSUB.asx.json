@@ -16,6 +16,13 @@
     "TYPE":"C",
     "LENGTH":20,
     "DECIMALS":-1
+   },
+   {
+    "NAME":"DEFAULT_DB_VERSION",
+    "KEY":"",
+    "TYPE":"C",
+    "LENGTH":4,
+    "DECIMALS":-1
    }
   ],
   "properties":

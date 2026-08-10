@@ -87,10 +87,10 @@
       ls_offline_data-description  = <fs_hareket>-aciklama.
       ls_offline_data-debit_credit = <fs_hareket>-borcalacak.
       IF ls_offline_data-debit_credit = 'A'.
-        ls_offline_data-payee_vkn = <fs_hareket>-karsihesapvkn.
+        ls_offline_data-debtor_vkn = <fs_hareket>-karsihesapvkn.
       ENDIF.
       IF ls_offline_data-debit_credit = 'B'.
-        ls_offline_data-debtor_vkn = <fs_hareket>-karsihesapvkn.
+        ls_offline_data-payee_vkn = <fs_hareket>-karsihesapvkn.
         SHIFT <fs_hareket>-miktar BY 1 PLACES LEFT.
       ENDIF.
 

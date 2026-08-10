@@ -170,6 +170,13 @@
     "TYPE":"C",
     "LENGTH":4,
     "DECIMALS":-1
+   },
+   {
+    "NAME":"CONV_EXIT_MODE",
+    "KEY":"",
+    "TYPE":"C",
+    "LENGTH":1,
+    "DECIMALS":-1
    }
   ],
   "properties":

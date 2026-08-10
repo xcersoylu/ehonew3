@@ -80,8 +80,8 @@
         ls_offline_data-description = ls_hareketler-uzunaciklama.
       ENDIF.
       ls_offline_data-debit_credit    = ls_hareketler-borcalacak.
-      ls_offline_data-payee_vkn       = ls_hareketler-borcluvkn.
-      ls_offline_data-debtor_vkn      = ls_hareketler-alacaklivkn.
+      ls_offline_data-payee_vkn       = ls_hareketler-alacaklivkn.
+      ls_offline_data-debtor_vkn      = ls_hareketler-borcluvkn.
       ls_offline_data-current_balance = ls_hareketler-anlikbakiye.
       ls_offline_data-receipt_no      = ls_hareketler-dekontno.
       ls_offline_data-sender_iban     = ls_hareketler-gonderenibanno.

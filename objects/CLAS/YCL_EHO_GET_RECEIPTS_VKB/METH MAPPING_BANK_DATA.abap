@@ -117,12 +117,12 @@
 
       READ TABLE <fs_hareket>-detaylar-keyvalueofstringstring INTO DATA(ls_detay) WITH KEY key = 'GonderenKimlikNumarasi'.
       IF sy-subrc = 0.
-        ls_offline_data-payee_vkn = ls_detay-value.
+        ls_offline_data-debtor_vkn = ls_detay-value.
       ENDIF.
 
       READ TABLE <fs_hareket>-detaylar-keyvalueofstringstring INTO ls_detay WITH KEY key = 'AliciKimlikNumarasi'.
       IF sy-subrc = 0.
-        ls_offline_data-debtor_vkn = ls_detay-value.
+        ls_offline_data-payee_vkn = ls_detay-value.
       ENDIF.
 
       ls_offline_data-current_balance = <fs_hareket>-islemsonrasibakiye.

@@ -1,4 +1,5 @@
   PRIVATE SECTION.
+    TYPES tt_saved_receipts TYPE TABLE OF yeho_t_savedrcpt.
     DATA mt_automatic_items TYPE yeho_tt_bank_automatic_items.
     DATA mv_companycode TYPE bukrs.
     DATA mt_glaccount_range TYPE RANGE OF hkont.
