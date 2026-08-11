@@ -26,7 +26,7 @@
                                                                      debit_credit_code = 'S'
                                                                   ) )
                                                   debtor_item = VALUE #( ( reference_document_item = '002'
-                                                                             debtor = is_item-customer
+                                                                             debtor = is_item-rule_data-customer
                                                                              amount_in_transaction_currency = VALUE #( currency_code = is_item-currency content = abs( is_item-amount ) * -1 )
                                                                              document_item_text = is_item-rule_data-documentitemtext_2
                                                                              debit_credit_code = 'H'
@@ -56,7 +56,7 @@
                                                                      debit_credit_code = 'H'
                                                                   ) )
                                                   creditor_item = VALUE #( ( reference_document_item = '002'
-                                                                             creditor = is_item-supplier
+                                                                             creditor = is_item-rule_data-supplier
                                                                              amount_in_transaction_currency = VALUE #( currency_code = is_item-currency content = abs( is_item-amount ) )
                                                                              document_item_text = is_item-rule_data-documentitemtext_2
                                                                              debit_credit_code = 'S'
