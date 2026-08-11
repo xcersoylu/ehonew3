@@ -90,6 +90,10 @@
                     WITH ls_create_confirmat-journal_entry_create_confirmat-accounting_document
                     INTO DATA(lv_message).
             APPEND VALUE #( message = lv_message messagetype =  ycl_eho_utils=>mc_success ) TO ms_response-messages.
+          ELSE.
+            LOOP AT ls_create_confirmat-log-item INTO DATA(ls_error_item) WHERE severity_code = '3'.
+              APPEND VALUE #( messagetype = 'E' message = ls_error_item-note ) TO ms_response-messages.
+            ENDLOOP.
           ENDIF.
         ENDIF.
       CATCH cx_ai_system_fault.

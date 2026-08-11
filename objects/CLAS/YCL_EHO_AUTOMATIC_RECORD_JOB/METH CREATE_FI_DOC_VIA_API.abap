@@ -4,7 +4,7 @@
         DATA(lo_proxy) = NEW yeho_je_co_journal_entry_creat( destination = destination ).
         DATA(ls_request) = VALUE yeho_je_journal_entry_bulk_cre( ).
         DATA(ls_local_time_info) = ycl_eho_utils=>get_local_time( ).
-        IF is_item-customer IS NOT INITIAL.
+        IF is_item-rule_data-customer IS NOT INITIAL.
           ls_request-journal_entry_bulk_create_requ-message_header = VALUE #( id = VALUE #( content = 'EHO' )
                                                                               creation_date_time = ls_local_time_info-timestamp ).
 
@@ -22,19 +22,19 @@
                                                    item = VALUE #( ( reference_document_item = '001'
                                                                      glaccount = VALUE #( content = is_item-rule_data-account_no_102 )
                                                                      amount_in_transaction_currency = VALUE #( currency_code = is_item-currency content = abs( is_item-amount ) )
-                                                                     document_item_text = is_item-documentitemtext102
+                                                                     document_item_text = is_item-rule_data-documentitemtext_1
                                                                      debit_credit_code = 'S'
                                                                   ) )
                                                   debtor_item = VALUE #( ( reference_document_item = '002'
                                                                              debtor = is_item-customer
                                                                              amount_in_transaction_currency = VALUE #( currency_code = is_item-currency content = abs( is_item-amount ) * -1 )
-                                                                             document_item_text = is_item-documentitemtext
+                                                                             document_item_text = is_item-rule_data-documentitemtext_2
                                                                              debit_credit_code = 'H'
                                                                              altv_recncln_accts = VALUE #( content = is_item-rule_data-alt_recon_account )
                                                                           ) )
                                                   )
           ) TO ls_request-journal_entry_bulk_create_requ-journal_entry_create_request.
-        ELSEIF is_item-supplier IS NOT INITIAL.
+        ELSEIF is_item-rule_data-supplier IS NOT INITIAL.
           ls_request-journal_entry_bulk_create_requ-message_header = VALUE #( id = VALUE #( content = 'EHO' )
                                                                               creation_date_time = ls_local_time_info-timestamp ).
 
@@ -52,13 +52,13 @@
                                                    item = VALUE #( ( reference_document_item = '001'
                                                                      glaccount = VALUE #( content = is_item-rule_data-account_no_102 )
                                                                      amount_in_transaction_currency = VALUE #( currency_code = is_item-currency content = abs( is_item-amount ) * -1 )
-                                                                     document_item_text = is_item-documentitemtext102
+                                                                     document_item_text = is_item-rule_data-documentitemtext_1
                                                                      debit_credit_code = 'H'
                                                                   ) )
                                                   creditor_item = VALUE #( ( reference_document_item = '002'
                                                                              creditor = is_item-supplier
                                                                              amount_in_transaction_currency = VALUE #( currency_code = is_item-currency content = abs( is_item-amount ) )
-                                                                             document_item_text = is_item-documentitemtext
+                                                                             document_item_text = is_item-rule_data-documentitemtext_2
                                                                              debit_credit_code = 'S'
                                                                              altv_recncln_accts = VALUE #( content = is_item-rule_data-alt_recon_account )
                                                                           ) )
@@ -97,6 +97,12 @@
                                                                number = 016
                                                                variable_1 =  CONV #( ls_create_confirmat-journal_entry_create_confirmat-accounting_document ) ).
             mo_log->add_item( lo_message ).
+          ELSE.
+            LOOP AT ls_create_confirmat-log-item INTO DATA(ls_error_item) WHERE severity_code = '3'.
+              lo_free = cl_bali_free_text_setter=>create( severity = if_bali_constants=>c_severity_warning
+                                                                text     = CONV #( ls_error_item-note ) ).
+              mo_log->add_item( lo_free ).
+            ENDLOOP.
           ENDIF.
         ENDIF.
       CATCH cx_ai_system_fault INTO DATA(lx_fault).
