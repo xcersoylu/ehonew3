@@ -21,3 +21,4 @@
                     RETURNING VALUE(rv_businesspartner) TYPE i_businesspartner-businesspartner.
     METHODS check_bp IMPORTING iv_businesspartner TYPE i_businesspartner-businesspartner
                      RETURNING VALUE(rv_usable)   TYPE abap_boolean.
+    METHODS create_fi_doc_via_api IMPORTING is_item TYPE yeho_s_bank_automatic_items EXPORTING et_saved_receipts TYPE tt_saved_receipts.

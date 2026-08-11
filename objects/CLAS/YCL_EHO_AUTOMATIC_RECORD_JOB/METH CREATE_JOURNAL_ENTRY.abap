@@ -70,6 +70,7 @@
     DATA lt_aritem         TYPE TABLE OF ty_aritems.
     DATA lt_taxitem        TYPE TABLE OF ty_taxitems.
     DATA lt_saved_receipts TYPE TABLE OF yeho_t_savedrcpt.
+    DATA lt_saved_receipts_via_api TYPE TABLE OF yeho_t_savedrcpt.
     DATA lv_taxamount      TYPE yeho_e_wrbtr.
     DATA lv_taxbaseamount  TYPE yeho_e_wrbtr.
     DATA lv_tax_ratio      TYPE yeho_e_tax_ratio.
@@ -345,6 +346,19 @@
 *              ENDIF.
 *            ENDIF.
           ELSE.
+            IF <ls_item>-rule_data-alt_recon_account IS NOT INITIAL.
+              CLEAR lt_saved_receipts_via_api.
+              create_fi_doc_via_api(
+                EXPORTING
+                  is_item           = <ls_item>
+                IMPORTING
+                  et_saved_receipts = lt_saved_receipts_via_api
+              ).
+              IF lt_saved_receipts_via_api IS NOT INITIAL.
+                APPEND LINES OF lt_saved_receipts_via_api TO lt_saved_receipts.
+              ENDIF.
+              CONTINUE.
+            ENDIF.
             IF <ls_item>-rule_data-taxcode IS NOT INITIAL.
               get_tax_ratio(
                 EXPORTING
@@ -353,17 +367,17 @@
                 RECEIVING
                   rv_ratio       = lv_tax_ratio
               ).
-            IF <ls_item>-amount > 0.
-              lv_taxamount = <ls_item>-amount - ( <ls_item>-amount / ( 1 + ( lv_tax_ratio / 100 ) ) ).
-              lv_taxbaseamount = <ls_item>-amount - lv_taxamount.
-              lv_taxamount *= -1.
-              lv_taxbaseamount *= -1.
-            ELSE.
-              lv_taxamount = <ls_item>-amount - ( <ls_item>-amount / ( 1 + ( lv_tax_ratio / 100 ) ) ).
-              lv_taxamount = abs( lv_taxamount ).
-              lv_taxbaseamount = <ls_item>-amount + lv_taxamount.
-              lv_taxbaseamount = abs( lv_taxbaseamount ).
-            ENDIF.
+              IF <ls_item>-amount > 0.
+                lv_taxamount = <ls_item>-amount - ( <ls_item>-amount / ( 1 + ( lv_tax_ratio / 100 ) ) ).
+                lv_taxbaseamount = <ls_item>-amount - lv_taxamount.
+                lv_taxamount *= -1.
+                lv_taxbaseamount *= -1.
+              ELSE.
+                lv_taxamount = <ls_item>-amount - ( <ls_item>-amount / ( 1 + ( lv_tax_ratio / 100 ) ) ).
+                lv_taxamount = abs( lv_taxamount ).
+                lv_taxbaseamount = <ls_item>-amount + lv_taxamount.
+                lv_taxbaseamount = abs( lv_taxbaseamount ).
+              ENDIF.
 *              IF <ls_item>-amount > 0.
 *                <ls_item>-amount  *= -1.
 *              ENDIF.
@@ -575,13 +589,17 @@
                   lv_usd_rate , lv_usd , lv_eur_rate , lv_eur,
                   lv_businesspartner , ls_bankpass, lv_usable.
         CATCH cx_uuid_error INTO DATA(lx_error).
+          DATA(lv_longtext) = lx_error->get_longtext(  ).
         CATCH cx_bali_runtime INTO DATA(lx_bali_runtime).
-          lo_free = cl_bali_free_text_setter=>create( severity = if_bali_constants=>c_severity_warning
-                                                            text     = CONV #( lx_error->get_longtext(  ) ) ).
-          TRY.
-              mo_log->add_item( lo_free ).
-            CATCH cx_bali_runtime INTO lx_bali_runtime.
-          ENDTRY.
+          lv_longtext = lx_bali_runtime->get_longtext(  ).
+          IF lv_longtext IS NOT INITIAL.
+            lo_free = cl_bali_free_text_setter=>create( severity = if_bali_constants=>c_severity_warning
+                                                              text     = CONV #( lv_longtext ) ).
+            TRY.
+                mo_log->add_item( lo_free ).
+              CATCH cx_bali_runtime INTO lx_bali_runtime.
+            ENDTRY.
+          ENDIF.
       ENDTRY.
     ENDLOOP.
     IF lt_saved_receipts[] IS NOT INITIAL.
