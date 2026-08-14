@@ -23,6 +23,16 @@
             rv_customer   = rv_businesspartner ).
         ENDIF.
       ENDIF.
+
+      IF is_item-payee_vkn IS INITIAL AND
+         is_item-debtor_vkn IS NOT INITIAL AND
+         is_item-debtor_vkn <> ms_companycode_parameters-tax_number.
+        ycl_eho_utils=>find_customer_from_tax_number(
+        EXPORTING
+          iv_tax_number = CONV #( is_item-debtor_vkn )
+        RECEIVING
+          rv_customer   = rv_businesspartner ).
+      ENDIF.
     ENDIF.
 *    IF rv_businesspartner IS INITIAL.
 *      IF is_item-payee_vkn = ms_companycode_parameters-tax_number.
