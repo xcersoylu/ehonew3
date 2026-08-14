@@ -6,42 +6,61 @@
         rv_businesspartner = rv_businesspartner
     ).
     IF rv_businesspartner IS INITIAL.
-      IF is_item-payee_vkn = ms_companycode_parameters-tax_number.
-        IF is_item-payee_vkn <> is_item-debtor_vkn.
-          IF is_item-amount > 0. "102 borç çalışıcak ise müşteridir.
-            ycl_eho_utils=>find_customer_from_tax_number(
-            EXPORTING
-              iv_tax_number = CONV #( is_item-debtor_vkn )
-            RECEIVING
-              rv_customer   = rv_businesspartner
-          ).
-          ELSE.
-            ycl_eho_utils=>find_supplier_from_tax_number(
-            EXPORTING
-              iv_tax_number = CONV #( is_item-debtor_vkn )
-            RECEIVING
-              rv_supplier   = rv_businesspartner
-             ).
-          ENDIF.
-        ELSEIF is_item-debtor_vkn = ms_companycode_parameters-tax_number.
-          IF is_item-payee_vkn <> is_item-debtor_vkn.
-            IF is_item-amount > 0. "102 borç çalışıcak ise müşteridir.
-              ycl_eho_utils=>find_customer_from_tax_number(
-              EXPORTING
-                iv_tax_number = CONV #( is_item-payee_vkn )
-              RECEIVING
-                rv_customer   = rv_businesspartner
-            ).
-            ELSE.
-              ycl_eho_utils=>find_supplier_from_tax_number(
-              EXPORTING
-                iv_tax_number = CONV #( is_item-payee_vkn )
-              RECEIVING
-                rv_supplier   = rv_businesspartner
-               ).
-            ENDIF.
-          ENDIF.
+      IF is_item-payee_vkn <> ms_companycode_parameters-tax_number AND
+         is_item-payee_vkn IS NOT INITIAL AND  "alacaklı vkn dolu
+         is_item-debtor_vkn IS INITIAL. "borçlu vkn boşsa
+        ycl_eho_utils=>find_supplier_from_tax_number(
+        EXPORTING
+          iv_tax_number = CONV #( is_item-payee_vkn )
+        RECEIVING
+          rv_supplier   = rv_businesspartner
+         ).
+        IF rv_businesspartner IS INITIAL.
+          ycl_eho_utils=>find_customer_from_tax_number(
+          EXPORTING
+            iv_tax_number = CONV #( is_item-payee_vkn )
+          RECEIVING
+            rv_customer   = rv_businesspartner ).
         ENDIF.
       ENDIF.
     ENDIF.
+*    IF rv_businesspartner IS INITIAL.
+*      IF is_item-payee_vkn = ms_companycode_parameters-tax_number.
+*        IF is_item-payee_vkn <> is_item-debtor_vkn.
+*          IF is_item-amount > 0. "102 borç çalışıcak ise müşteridir.
+*            ycl_eho_utils=>find_customer_from_tax_number(
+*            EXPORTING
+*              iv_tax_number = CONV #( is_item-debtor_vkn )
+*            RECEIVING
+*              rv_customer   = rv_businesspartner
+*          ).
+*          ELSE.
+*            ycl_eho_utils=>find_supplier_from_tax_number(
+*            EXPORTING
+*              iv_tax_number = CONV #( is_item-debtor_vkn )
+*            RECEIVING
+*              rv_supplier   = rv_businesspartner
+*             ).
+*          ENDIF.
+*        ELSEIF is_item-debtor_vkn = ms_companycode_parameters-tax_number.
+*          IF is_item-payee_vkn <> is_item-debtor_vkn.
+*            IF is_item-amount > 0. "102 borç çalışıcak ise müşteridir.
+*              ycl_eho_utils=>find_customer_from_tax_number(
+*              EXPORTING
+*                iv_tax_number = CONV #( is_item-payee_vkn )
+*              RECEIVING
+*                rv_customer   = rv_businesspartner
+*            ).
+*            ELSE.
+*              ycl_eho_utils=>find_supplier_from_tax_number(
+*              EXPORTING
+*                iv_tax_number = CONV #( is_item-payee_vkn )
+*              RECEIVING
+*                rv_supplier   = rv_businesspartner
+*               ).
+*            ENDIF.
+*          ENDIF.
+*        ENDIF.
+*      ENDIF.
+*    ENDIF.
   ENDMETHOD.
